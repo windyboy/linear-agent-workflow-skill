@@ -13,7 +13,7 @@ Any agent working in this project must follow these rules.
 - Move an issue to `completed` only after an actual production release, deployment, or other release evidence has been confirmed.
 - Resolve workflow states from the team via MCP. Use state IDs for writes and state types for semantic decisions; never assume state names or IDs.
 - If MCP is unavailable or any required operation fails, stop the state change and report the failure.
-- Prefer commit messages containing a complete Linear identifier such as `ABC-123`; extract identifiers with a boundary-safe match (`\b[A-Z]{1,5}-\d+\b`) so `ABC-12` does not match `ABC-123`.
+- Prefer commit messages containing a complete Linear identifier such as `ABC-123`; extract identifiers with a boundary-safe match (`\b[A-Z0-9]{1,5}-\d+\b`) so `ABC-12` does not match `ABC-123`.
 
 ## General principles
 
