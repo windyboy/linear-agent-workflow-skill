@@ -35,7 +35,9 @@ Discover a need or problem
 
 - Works with any Agent runtime that supports Markdown Skills, instructions, or equivalent Linear tooling.
 - Discovers capabilities rather than assuming a Linear server or function name.
-- Limits Linear operations to the current code project by default.
+- Uses **team as the required write boundary** and **project as an optional boundary** (unless repo policy requires it); never performs cross-team or cross-project writes.
+- Separates four stages for completion: discovery → proposed candidate list → user/trusted-caller authorization → state mutation. Candidate selection never implies write authorization.
+- Requires explicit confirmation for both explicit issue IDs and automatically inferred IDs before any `completed` write.
 - Reads back every state change before reporting success.
 - Requires explicit user confirmation before creating an issue, starting implementation, and moving to Review.
 - Requires release/deployment evidence before Done.
