@@ -26,10 +26,14 @@ description: 管理 Linear issue 的端到端交付生命周期。用户提及 L
 
 所有 Linear 查询、创建、领取、状态变更、评论和 Done 操作默认只与**当前代码项目**有关。开始 Linear 操作前，从当前仓库的项目说明、Agent instructions、现有 issue/PR/branch 关联、配置或用户输入识别当前 Linear project 与 team；不得仅因目录名猜测映射。
 
-- 范围已确定：列表默认只显示该 project 的 issue，并在输出中保留 Project 列；创建和写入前确认目标 issue 属于该 project/team。
-- 范围不明确、映射冲突或 issue 缺少 project：仅进行不会跨项目的只读分析并询问用户；不得创建、领取、转 Review 或 Done。
-- 用户明确指定其他 project/team 或跨项目 issue：回显该例外范围；跨项目写入仍须在每个 issue 的 project/team 已确认后执行。
-- 自动从发布范围推断 Done 时：只接受已确认属于当前项目范围的候选；其他候选列为跨项目项，不自动更新。
+**写入边界：team 为必需边界，project 为可选边界。** 每次写入前必须验证目标 issue 的 team 归属；team 不匹配（跨 team）一律不得写入。project 仅在仓库策略明确要求时作为额外限制；无 project-only 限制时，已验证 team 归属的 issue 即使没有 project 也可处理。
+
+- 范围已确定：列表默认只显示该 project 的 issue，并在输出中保留 Project 列；创建和写入前确认目标 issue 属于该 team（及，若适用，project）。
+- 范围不明确或映射冲突：仅进行不会跨 team/跨项目的只读分析并询问用户；不得创建、领取、转 Review 或 Done。
+- issue 缺少 project（但 team 已验证）：**不因此阻塞写入**；只要 team 边界已验证且无 project-only 限制，即可按生命周期正常处理。仅当仓库策略显式要求 project 时才视为阻塞。
+- 用户明确指定其他 project/team 或跨项目 issue：回显该例外范围；跨项目写入仍须在每个 issue 的 team/project 已确认后执行。
+- project 范围请求：仍排除无 project 与跨 project 的 issue；这些候选仅报告，不自动更新。
+- 自动从发布范围推断 Done 时：只接受已确认属于当前 team/project 范围的候选；其他候选列为跨项目/跨 team 项，不自动更新。
 
 ## 0. 发现能力与安全边界
 
