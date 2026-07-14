@@ -1,134 +1,134 @@
 ---
 name: linear-workflow
-description: 管理 Linear issue 的端到端交付生命周期。用户提及 Linear、issue 标识符（如 ABC-123）、未完成需求或 Bug、创建 issue、开始处理/领取、实施计划、分支、PR、验证通过、转 Review、发布/上线或关闭 issue，或英文意图如 “start issue”、“create issue”、“move to review”、“mark issues done” 时使用。仅用于 Linear issue 生命周期，不用于普通代码 Review；通过当前运行环境的 Linear 集成安全执行查询、started、Review 与发布后 completed。
+description: Manage the end-to-end delivery lifecycle of Linear issues. Use when users mention Linear, issue identifiers (e.g., ABC-123), unfinished requirements or bugs, creating issues, starting/claiming work, implementation plans, branches, PRs, verification, moving to review, publishing/deploying, or closing issues. Also use for English intents like "start issue", "create issue", "move to review", "mark issues done". Only for Linear issue lifecycle, not for regular code reviews; safely execute queries, started, Review, and post-release completed through the current runtime's Linear integration.
 ---
 
 # Linear Workflow
 
-本 Skill 与宿主无关：使用当前 Agent runtime 提供的 **Linear integration**（Linear MCP、API、connector 或等价工具提供者），不得假设产品、目录、server、工具函数或状态名称。工具名如 `list issues`、`get issue`、`update issue`、`create comment` 仅为示意；实际名称由当前环境决定。
+This skill is host-agnostic: use the **Linear integration** provided by the current agent runtime (Linear MCP, API, connector, or equivalent tool provider). Do not assume product names, directory structures, server names, function names, or state names. Tool names like `list issues`, `get issue`, `update issue`, `create comment` are illustrative only; actual names depend on the current environment.
 
-## 生命周期选择
+## Lifecycle Selection
 
-采用以下端到端流程：
+Follow this end-to-end flow:
 
 ```text
-发现需求/问题 →（确认后）创建或选择 Linear Issue → 读取完整 Issue
-→ 核对代码与工作区 → 输出实施计划 → 用户确认开始
-→ 更新为 started + 建立专用分支 → 实现与自动化测试
-→ Commit / Push / PR → CI → 请求用户最终验收
-→ 用户验收通过后转 Review 并回写 Linear → 人工 Review → Merge
-→ 实际发布/部署成功 → Linear Done
+Discover requirement/issue → (after confirmation) Create or select Linear Issue → Read full issue
+→ Verify code and workspace → Output implementation plan → User confirms to start
+→ Update to started + create dedicated branch → Implement and automated testing
+→ Commit / Push / PR → CI → Request user final acceptance
+→ After user acceptance, move to Review and write back to Linear → Manual Review → Merge
+→ Successful production release/deploy → Linear Done
 ```
 
-`Merge ≠ Done`。代码完成、测试通过、commit、push、PR、CI、审批、merge 或 release tag 本身均不等于生产发布成功。仅真实发布/部署成功才可进入 Done。阶段不可跳过；每个 Linear 写入必须回读验证。
+`Merge ≠ Done`. Code completion, tests passing, commit, push, PR, CI, approval, merge, or release tags do not constitute successful production release. Only successful production release/deploy can move to Done. Stages cannot be skipped; every Linear write must be verified with a read-back.
 
-## 当前项目范围（默认边界）
+## Current Project Scope (Default Boundaries)
 
-所有 Linear 查询、创建、领取、状态变更、评论和 Done 操作默认只与**当前代码项目**有关。开始 Linear 操作前，从当前仓库的项目说明、Agent instructions、现有 issue/PR/branch 关联、配置或用户输入识别当前 Linear project 与 team；不得仅因目录名猜测映射。
+All Linear queries, creation, claiming, status changes, comments, and Done operations default to only the **current code project**. Before starting Linear operations, identify the current Linear project and team from the repository's project description, agent instructions, existing issue/PR/branch associations, configuration, or user input; do not guess mappings from directory names alone.
 
-- 范围已确定：列表默认只显示该 project 的 issue，并在输出中保留 Project 列；创建和写入前确认目标 issue 属于该 project/team。
-- 范围不明确、映射冲突或 issue 缺少 project：仅进行不会跨项目的只读分析并询问用户；不得创建、领取、转 Review 或 Done。
-- 用户明确指定其他 project/team 或跨项目 issue：回显该例外范围；跨项目写入仍须在每个 issue 的 project/team 已确认后执行。
-- 自动从发布范围推断 Done 时：只接受已确认属于当前项目范围的候选；其他候选列为跨项目项，不自动更新。
+- Scope confirmed: Lists default to showing only that project's issues, with the Project column preserved in output; before creating or writing, verify the target issue belongs to that project/team.
+- Scope unclear, mapping conflict, or issue missing project: Only perform read-only analysis that won't cross projects and ask the user; do not create, claim, move to Review, or Done.
+- User explicitly specifies other project/team or cross-project issues: Echo the exception scope; cross-project writes still require each issue's project/team to be confirmed before execution.
+- When inferring Done from release scope: Only accept candidates confirmed to belong to current project scope; list other candidates as cross-project items, do not auto-update.
 
-## 0. 发现能力与安全边界
+## 0. Capability Discovery and Safety Boundaries
 
-每个会话首次执行 Linear 操作前，按能力而非工具名确认并记录映射：
+Before performing Linear operations for the first time in each session, confirm and record mappings by capability (not tool name):
 
-| 能力 | 用途 | 缺失时的处理 |
+| Capability | Purpose | When Missing |
 | --- | --- | --- |
-| 查询 team/workspace、项目、负责人、标签 | 确定范围和显示字段 | 限制查询范围并说明；不能猜测 team |
-| 列表/搜索 issue，支持分页 | 查询待办与候选 | 只报告已取得页；不能声称完整结果 |
-| 按 identifier/ID 获取完整 issue | 浏览、实施与写入前回读 | 不得开始实施或写入该 issue |
-| 创建 issue | 将已确认需求/问题记录到 Linear | 可分析和起草内容；不得谎称已创建 |
-| 获取 workflow states（含 ID、name、type、顺序） | 映射状态 | 不得更新状态 |
-| 更新 issue 状态 | 生命周期变更 | 可继续只读分析，不得声称已变更 |
-| 获取/新增评论和关联信息 | 上下文与审计评论 | 可更新状态时须单独报告评论未完成 |
+| Query team/workspace, projects, assignees, labels | Determine scope and display fields | Limit query scope and explain; cannot guess team |
+| List/search issues with pagination | Query backlogs and candidates | Only report retrieved pages; cannot claim complete results |
+| Get full issue by identifier/ID | Browse, implement, and pre-write verification | Do not start implementation or writing to that issue |
+| Create issue | Record confirmed requirements/issues to Linear | Can analyze and draft content; do not claim creation |
+| Get workflow states (with ID, name, type, order) | Map states | Do not update states |
+| Update issue status | Lifecycle changes | Can continue read-only analysis; do not claim changes |
+| Get/add comments and association info | Context and audit comments | When updating states, report separately that comments are pending |
 
-认证失败、权限不足、超时或返回字段不完整时，不得用自然语言替代真实写入。工具超时后，**先重新查询**目标 issue 再决定是否重试。
+When authentication fails, insufficient permissions, timeout, or incomplete field returns, do not use natural language to substitute for actual writes. After tool timeout, **first re-query** the target issue before deciding whether to retry.
 
-## 1. 状态映射
+## 1. State Mapping
 
-先读取 issue 所属 team，再获取该 team 的 workflow states。状态角色为 `backlog_state`、`unstarted_state`、`started_state`、`review_state`、`completed_state`、`canceled_state`。更新时使用实际 state ID；判断使用 type 与语义，不能硬编码 `Todo`、`In Progress`、`In Review` 或 `Done`。
+First read the issue's team, then get that team's workflow states. State roles are `backlog_state`, `unstarted_state`, `started_state`, `review_state`, `completed_state`, `canceled_state`. When updating, use actual state IDs; judge using type and semantics, do not hardcode `Todo`, `In Progress`, `In Review`, or `Done`.
 
-按以下优先级映射目标状态：已验证的显式 state ID → state `type` → 名称的精确语义（如 Review/QA Review/Code Review）→ 状态顺序和团队上下文 → 用户确认。
+Map target states by this priority: verified explicit state ID → state `type` → precise semantic name (e.g., Review/QA Review/Code Review) → state order and team context → user confirmation.
 
-`started_state` 通常是 type `started` 的实施状态。`review_state` 必须是独立且无歧义的 Review/QA/Code Review 语义状态；不要因为名称相似就猜测。若无独立 Review 状态，不创建状态、不用 completed 代替；报告映射结果并由用户决定保持 started 或使用哪个现有状态。多个候选冲突时同样停止等待确认。
+`started_state` is typically the implementation state with type `started`. `review_state` must be an independent, unambiguous Review/QA/Code Review semantic state; do not guess because names are similar. If there is no independent Review state, do not create a state, do not use completed as a substitute; report the mapping result and let the user decide whether to keep started or use an existing state. When multiple candidates conflict, also stop and wait for confirmation.
 
-## 2. 发现、创建与查询（只读为默认）
+## 2. Discovery, Creation, and Querying (Read-Only by Default)
 
-“还有哪些需求没做”“还有哪些 bug”“查看 Linear 待办”等仅表示浏览，不得改变 issue。先确定 team、project、assignee 等用户给出的范围；范围不明确且无法安全默认时先询问。
+"Which requirements are pending", "what bugs are there", "view Linear backlog" only mean browsing; do not change issues. First determine team, project, assignee, and other user-provided scope; when scope is unclear and cannot be safely defaulted, ask first.
 
-1. 分页读取至完成、明确的结果上限，或工具无法继续；说明覆盖范围/上限。
-2. 排除 type `completed`、`canceled` 与 `triage`；保留 backlog、unstarted、started 和 Review。
-3. 先提醒已处于 started/Review 的 issue；其余按 Urgent、High、Medium、Low、无优先级排序，同优先级按更新时间、创建时间、identifier。
-4. 使用 issue type、labels、项目约定分类为 Bug 与 Feature/Other。仅从标题或描述推断时标注“推测”。
-5. 输出 `ID | 标题 | 类型 | 优先级 | 状态 | 负责人 | 项目`；缺失字段显示 `—`，不编造。
+1. Paginate through results until complete, explicit result limit, or tool cannot continue; explain coverage/limit.
+2. Exclude type `completed`, `canceled`, and `triage`; retain backlog, unstarted, started, and Review.
+3. First alert issues already in started/Review; sort remaining by Urgent, High, Medium, Low, No Priority; same priority by update time, creation time, identifier.
+4. Classify as Bug vs Feature/Other using issue type, labels, project conventions. When inferred only from title or description, mark as "inferred".
+5. Output `ID | Title | Type | Priority | Status | Assignee | Project`; missing fields show `—`, do not fabricate.
 
-“看看/分析/解释 ABC-123”只读取完整详情，不领取、不改状态。发现新需求/问题时，先回显拟创建的标题、问题/影响、验收标准、team/project/priority/labels；仅在用户明确要求或确认创建后调用创建能力，并回读 identifier。创建失败时可提供草稿，不得称已创建。
+"Look at/analyze/explain ABC-123" only reads full details, does not claim or change status. When discovering new requirements/issues, first echo the proposed title, problem/impact, acceptance criteria, team/project/priority/labels; only call creation capability after user explicitly requests or confirms creation, then read back the identifier. When creation fails, provide a draft, do not claim it was created.
 
-## 3. 读取、核对代码与实施计划
+## 3. Read, Verify Code, and Implementation Plan
 
-开始实施前，完整读取：标题、描述、验收标准、当前状态、优先级、负责人、labels、项目、cycle、评论、附件、父/子 issue、阻塞/被阻塞/关联 issue，以及 branch、PR、commit 关联（若集成可提供）。不得仅凭标题修改代码。
+Before starting implementation, fully read: title, description, acceptance criteria, current status, priority, assignee, labels, project, cycle, comments, attachments, parent/child issues, blocking/blocked/related issues, and branch, PR, commit associations (if integration provides). Do not modify code based on title alone.
 
-读取项目自身 Agent instructions，检查代码库结构和版本控制状态，定位相关模块，识别构建/测试方式，并尽可能记录修改前基线。若 issue 内容不足，检查关联 issue、历史与代码后列出缺失信息；不要编造验收标准。
+Read the project's own agent instructions, check codebase structure and version control status, locate relevant modules, identify build/test methods, and record pre-change baseline when possible. If issue content is insufficient, check related issues, history, and code before listing missing information; do not fabricate acceptance criteria.
 
-输出实施计划，至少包含：问题与验收标准、根因假设/待验证项、影响文件或模块、最小修改方案、测试与回滚考虑、分支建议和 PR/发布风险。等待用户确认“开始处理”或等价明确指令后，才进入实施阶段；仅浏览或计划不改变 issue 状态、不创建分支。
+Output implementation plan, containing at minimum: problem and acceptance criteria, root cause hypothesis/items to verify, affected files or modules, minimal modification approach, testing and rollback considerations, branch suggestions, and PR/release risks. Wait for user confirmation "start processing" or equivalent explicit instruction before entering implementation phase; only browsing or planning does not change issue status or create branches.
 
-## 4. 领取、分支与实施
+## 4. Claim, Branch, and Implementation
 
-用户确认开始后，重新读取当前 issue/state 与 team states：
+After user confirms to start, re-read current issue/state and team states:
 
-1. 若已是 started/Review，不重复写入；说明状态。若 completed/canceled/triage，不自动重开，须用户明确要求。若负责人是其他人，告知用户，不擅自改 assignee。
-2. 对可开始的 backlog/unstarted，更新为实际 `started_state`；仅在用户要求且工具支持时设置当前用户为负责人。
-3. 回读确认目标 state ID/type；验证失败则不创建分支或修改代码。
-4. 基于项目既有分支规范建立专用分支；无规范时建议使用包含完整 issue identifier 的短名称。创建前检查工作区，绝不覆盖用户未提交修改。
-5. 实现最小必要修改；不要顺带重构、删除有价值注释或改变无关公开行为。
+1. If already in started/Review, do not write again; explain status. If completed/canceled/triage, do not auto-reopen; requires explicit user request. If assignee is someone else, inform user, do not change assignee without permission.
+2. For claimable backlog/unstarted, update to actual `started_state`; only set current user as assignee when user requests and tool supports.
+3. Read back to confirm target state ID/type; if verification fails, do not create branch or modify code.
+4. Create dedicated branch based on project's existing branch conventions; when no conventions exist, suggest short name containing full issue identifier. Check workspace before creating; never overwrite user's uncommitted changes.
+5. Implement minimal necessary changes; do not incidentally refactor, remove valuable comments, or change unrelated public behavior.
 
-## 5. 自动化验证、Commit、Push 与 PR
+## 5. Automated Verification, Commit, Push, and PR
 
-实施后，执行适用的测试、构建、lint、类型检查和项目已有静态分析；区分修改前已有失败、未执行项与本次失败，绝不声称未运行的验证通过。
+After implementation, run applicable tests, builds, linting, type checking, and project's existing static analysis; distinguish pre-existing failures, unexecuted items, and this change's failures; never claim verification passed without running it.
 
-自动化验证达到可审查状态后：
+After automated verification reaches reviewable state:
 
-1. 回写可选的进展评论（仅在用户要求或团队约定需要时），内容必须真实且不宣称用户已验收。
-2. 检查变更与工作区，创建包含完整 issue identifier 的清晰 commit；仅在用户要求或项目规则允许时 push。
-3. 创建 PR 时关联 issue，附变更摘要、验证结果、未执行项和风险；PR 创建失败不影响已验证的本地实现，但必须如实报告。
-4. 运行或等待可用 CI；CI 失败/未运行时不能声称可合并。CI 通过也不替代用户验收或生产发布。
+1. Write back optional progress comments (only when user requests or team convention requires), content must be truthful and must not claim user has accepted.
+2. Check changes and workspace, create commit with clear message including full issue identifier; only push when user requests or project rules allow.
+3. When creating PR, link to issue, include change summary, verification results, unexecuted items, and risks; PR creation failure does not affect verified local implementation, but must report truthfully.
+4. Run or wait for available CI; when CI fails/not run, cannot claim mergeable. CI passing also does not substitute for user acceptance or production release.
 
-## 6. 用户验收与转 Review
+## 6. User Acceptance and Moving to Review
 
-在自动化验证、commit/PR/CI 状态均已如实总结后，请求最终验收：
+After automated verification, commit/PR/CI status have all been truthfully summarized, request final acceptance:
 
-> 请验证 ISSUE-ID 对应的问题是否已经解决。确认通过后，我会将其更新为 Review 状态。
+> Please verify whether the issue corresponding to ISSUE-ID has been resolved. After confirmation, I will update it to Review status.
 
-用户说问题仍存在或验收失败时，保持 started，记录反馈（若用户/调用方要求可添加“待继续排查”评论），继续修复；不要添加“已解决”评论或转 Review。
+When user says issue still exists or acceptance fails, keep started, record feedback (if user/caller requests, can add "pending further investigation" comment), continue fixing; do not add "resolved" comment or move to Review.
 
-只有用户明确表示其验收通过（如“我验证通过了”）时才触发：
+Only when user explicitly states acceptance passed (e.g., "I verified it passed") trigger:
 
-1. 回读 issue，获取 team states，并解析无歧义 `review_state`。
-2. 若已在目标 Review 状态，跳过状态写入；检查是否已有本次相同审计评论，避免重复。
-3. 更新状态后回读确认实际状态；若失败，报告，不声称成功。
-4. 新增并回读解决摘要评论：Resolution summary、Root cause、Implementation、Key files、Validation performed、Validation not performed、Known limitations、Commit/PR reference。
-5. 状态成功但评论失败，明确报告“状态成功、评论失败”；评论成功但状态失败时同样分别报告，且不得称为已转 Review。
+1. Re-read issue, get team states, and parse unambiguous `review_state`.
+2. If already in target Review state, skip state write; check if identical audit comment already exists to avoid duplicates.
+3. After updating state, read back to confirm actual state; if fails, report, do not claim success.
+4. Add and read back resolution summary comment: Resolution summary, Root cause, Implementation, Key files, Validation performed, Validation not performed, Known limitations, Commit/PR reference.
+5. If state succeeds but comment fails, explicitly report "state succeeded, comment failed"; if comment succeeds but state fails, also report separately, and do not claim moved to Review.
 
-人工 Review、CI 复核和 Merge 由当前项目流程或相应 Skill 执行。Merge 后保持 Review（或团队定义的等价非完成状态），直到真实发布/部署成功。
+Manual Review, CI review, and Merge are executed by current project process or corresponding skill. After merge, keep Review (or equivalent non-done state defined by team) until actual production release/deploy succeeds.
 
-## 7. 发布后 Done
+## 7. Post-Release Done
 
-当用户明确确认已发布/上线/部署成功，或 release/deploy 等其他 Skill 提供可信成功部署结果时，调用 [mark-done.md](mark-done.md)。Done 子流程可独立调用，调用方应尽量提供其输入契约；不要依赖本文件的隐式上下文。
+When user explicitly confirms release/deploy success, or release/deploy skills provide credible successful deployment results, call [mark-done.md](mark-done.md). Done subprocess can be called independently; caller should provide its input contract; do not rely on implicit context from this file.
 
-## 8. 幂等性与错误格式
+## 8. Idempotency and Error Format
 
-每次写入前读取，目标状态已满足则跳过；超时后先回读；只补做未成功步骤；不要重复添加完全相同的评论。单 issue 的状态与评论是可独立审计的步骤。
+Before each write, read first; if target state already satisfied, skip; after timeout, re-read first; only complete unexecuted steps; do not repeat identical comments. Single issue status and comments are independently auditable steps.
 
-每次状态变更输出：`Issue、原状态、目标状态、实际状态、状态更新、评论更新、验证方式`；批量使用表格且不暴露 token、完整内部 JSON 或无关元数据。错误至少输出：
+Each status change outputs: `Issue, original status, target status, actual status, status update, comment update, verification method`; use tables for batch operations and do not expose tokens, full internal JSON, or irrelevant metadata. Errors output at minimum:
 
 ```text
-Issue：
-步骤：
-结果：
-错误原因：
-是否可重试：
-建议处理方式：
+Issue:
+Step:
+Result:
+Error reason:
+Retryable:
+Suggested action:
 ```
