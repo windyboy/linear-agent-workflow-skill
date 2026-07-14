@@ -60,7 +60,7 @@ description: 管理 Linear issue 的端到端交付生命周期。用户提及 L
 “还有哪些需求没做”“还有哪些 bug”“查看 Linear 待办”等仅表示浏览，不得改变 issue。先确定 team、project、assignee 等用户给出的范围；范围不明确且无法安全默认时先询问。
 
 1. 分页读取至完成、明确的结果上限，或工具无法继续；说明覆盖范围/上限。
-2. 排除 type `completed`、`canceled` 与 `tried`；保留 backlog、unstarted、started 和 Review。
+2. 排除 type `completed`、`canceled` 与 `triage`；保留 backlog、unstarted、started 和 Review。
 3. 先提醒已处于 started/Review 的 issue；其余按 Urgent、High、Medium、Low、无优先级排序，同优先级按更新时间、创建时间、identifier。
 4. 使用 issue type、labels、项目约定分类为 Bug 与 Feature/Other。仅从标题或描述推断时标注“推测”。
 5. 输出 `ID | 标题 | 类型 | 优先级 | 状态 | 负责人 | 项目`；缺失字段显示 `—`，不编造。
@@ -79,7 +79,7 @@ description: 管理 Linear issue 的端到端交付生命周期。用户提及 L
 
 用户确认开始后，重新读取当前 issue/state 与 team states：
 
-1. 若已是 started/Review，不重复写入；说明状态。若 completed/canceled/tried，不自动重开，须用户明确要求。若负责人是其他人，告知用户，不擅自改 assignee。
+1. 若已是 started/Review，不重复写入；说明状态。若 completed/canceled/triage，不自动重开，须用户明确要求。若负责人是其他人，告知用户，不擅自改 assignee。
 2. 对可开始的 backlog/unstarted，更新为实际 `started_state`；仅在用户要求且工具支持时设置当前用户为负责人。
 3. 回读确认目标 state ID/type；验证失败则不创建分支或修改代码。
 4. 基于项目既有分支规范建立专用分支；无规范时建议使用包含完整 issue identifier 的短名称。创建前检查工作区，绝不覆盖用户未提交修改。
