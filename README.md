@@ -31,14 +31,29 @@ Discover a need or problem
 → Move to started and create a dedicated branch
 → Implement and run automated checks
 → Commit, push, and open a PR
-→ CI and user acceptance
-→ Move to Review
+→ CI passes
+→ [Review Gate] → Move to Review (policy-dependent)
 → Human review and merge
 → Successful production release or deployment
 → Mark the Linear issue Done
 ```
 
 > **Merge is not Done.** An issue is completed only after verified production release or deployment.
+
+### Review Gate policies
+
+The point at which an issue moves to Review is configurable via the **Review Gate** policy:
+
+| Policy | Review trigger | Typical flow |
+| --- | --- | --- |
+| `user_acceptance` (default) | User explicitly accepts the change | CI → User acceptance → Review → Merge |
+| `pr_ready` | PR created and CI passes | CI → Review (acceptance during review) → Merge |
+
+Configure via repository instructions (`AGENTS.md`, `CLAUDE.md`), team/project conventions, or explicit user selection. The **Completion Gate** (`production_deployment`) is always mandatory and cannot be changed.
+
+### Resume existing work
+
+When resuming interrupted work, the skill detects the current state from evidence (branch, commits, PR, CI, deployment records) and continues from the first unverified stage — no stage is skipped without evidence.
 
 ## Safety guarantees
 

@@ -1,10 +1,10 @@
-# Mark Done：发布证据到 `completed`
+# Mark Done: From Deployment Evidence to `completed`
 
-本子流程可被 release、deploy、review 或其他 Skill 独立调用；不依赖主工作流的隐式上下文，也不把 Done 当作默认收尾动作。使用当前环境的 Linear integration，不假设工具名、宿主或固定状态名称。
+This sub-workflow can be independently invoked by release, deploy, review, or other Skills; it does not rely on implicit context from the main workflow and does not treat Done as a default closing action. Uses the current environment's Linear integration; does not assume tool names, hosts, or fixed state names.
 
-## 调用契约
+## Invocation Contract
 
-调用方提供可用信息（均可选，除 `deployment_status` 在自动调用时必须存在）：
+The caller provides available information (all optional, except `deployment_status` is required for automated invocation):
 
 ```text
 issue_ids: optional list of explicit identifiers
@@ -19,7 +19,7 @@ deployment_evidence: optional URL, record, or user statement
 source: optional calling skill or user request
 ```
 
-输出结构（以用户可读表格和等价字段表达）：
+Output structure (expressed as user-readable tables and equivalent fields):
 
 ```text
 updated_issues
@@ -31,112 +31,112 @@ comments_created
 comment_failures
 ```
 
-## 项目范围校验
+## Project Scope Validation
 
-默认只处理当前代码项目范围内的 issue。调用方应传入 `project_scope`，或提供可验证的当前项目/团队映射；缺失、冲突或无法验证时，不得写入。对发布范围中的跨项目候选，只报告为跨项目项，除非用户明确指定该项目范围并确认写入。
+By default, only issues within the current code project scope are processed. The caller should provide `project_scope`, or provide a verifiable current project/team mapping; when missing, conflicting, or unverifiable, do not write. Cross-project candidates in the release scope are only reported as cross-project items unless the user explicitly specifies that project scope and confirms the write.
 
-## 确认发布前置条件
+## Release Confirmation Prerequisites
 
-仅在满足其一时写入 `completed`：
+Write `completed` only when at least one of the following is met:
 
-1. 用户在当前会话明确说明对应变更已经发布、上线或部署成功；
-2. 调用方提供 `deployment_status=success` 和可信部署证据；
-3. 当前环境能读取明确的生产发布成功记录。
+1. The user explicitly states in the current session that the corresponding change has been released, launched, or deployed successfully;
+2. The caller provides `deployment_status=success` with trusted deployment evidence;
+3. The current environment can read a clear successful production release record.
 
-release tag、构建包、commit、push、PR、PR merge、测试或批准本身都不是充分证据；tag 仅在有部署/发布记录或其他证据证明其已在目标环境生效时才有效。证据不足时不写入、不把 In Review 改为 Done，并说明缺少什么。
+Release tags, build artifacts, commits, pushes, PRs, PR merges, tests, or approvals are each individually insufficient evidence; a tag is only valid when deployment/release records or other evidence prove it is effective in the target environment. When evidence is insufficient, do not write, do not change In Review to Done, and explain what is missing.
 
-### 无人值守自动完成（unattended automated completion）的精确条件
+### Precise Conditions for Unattended Automated Completion
 
-仅当**全部**满足时才允许调用方在无人确认的情况下自动写入 `completed`：
+Automatic `completed` writes without human confirmation are only permitted when **all** of the following are satisfied:
 
-1. 调用方为可信自动化（release/deploy/review 流程或等价 Skill），且显式传入 `deployment_status=success`；
-2. 提供可信部署证据（`deployment_evidence` 或环境可读的成功部署记录）；
-3. 已验证目标 issue 的 **team** 归属（team 为必需写入边界）；
-4. 若请求为 project 范围，则已验证 project 归属；纯 team 范围且无 project-only 限制时，无 project 的 issue 也可处理；
-5. 每个待写入 issue 已通过显式 ID 或强证据进入候选清单，并获得本条件 1–4 的授权。
+1. The caller is a trusted automation (release/deploy/review workflow or equivalent Skill) and explicitly passes `deployment_status=success`;
+2. Trusted deployment evidence is provided (`deployment_evidence` or an environment-readable successful deployment record);
+3. The target issue's **team** membership has been verified (team is the required write boundary);
+4. If the request is project-scoped, project membership has been verified; for pure team scope without a project-only restriction, issues without a project may also be processed;
+5. Each issue to be written has entered the candidate list via explicit ID or strong evidence, and has obtained authorization under conditions 1–4 above.
 
-强证据或“进入候选清单”本身**绝不**构成无人值守完成的授权；缺少上述任一条件时停止并说明缺少什么，不得写入。
+Strong evidence or "entering the candidate list" **never** constitutes authorization for unattended completion; when any of the above conditions is missing, stop and explain what is missing; do not write.
 
-## 模式 A：显式 issue ID
+## Mode A: Explicit Issue ID
 
-用户明确给出合法 identifier 时进入此模式。**显式 ID 仅标识目标 issue，不构成写入授权**；仍须满足「确认发布前置条件」中的发布确认（用户明确说明已发布/上线/部署成功，或可信调用方提供 `deployment_status=success` 与可信证据）后才授权写入。
+Entered when the user explicitly provides a valid identifier. **Explicit IDs only identify the target issue, do not constitute write authorization**; the release confirmation from "Release Confirmation Prerequisites" is still required (user explicitly states released/launched/deployed successfully, or trusted caller provides `deployment_status=success` with trusted evidence) before write authorization is granted.
 
-1. 验证 identifier 为完整边界格式 `\b[A-Z0-9]{1,5}-\d+\b`（比较时规范大小写与格式，前缀允许字母与数字，如 `w1n-11`）；格式错误或不存在时单独报告。
-2. 逐个读取 issue，记录标题、原状态、team、assignee、priority 与发布证据；**每次写入前验证 team 归属**（team 为必需写入边界）。
-3. 已 completed 的 issue 跳过；canceled/tried 不改；backlog/unstarted 不改并说明需先走生命周期。仅 started/Review 等可完成状态进入写入。
-4. 读取该 team workflow states，唯一解析 `completed_state`，使用其 ID 更新。
-5. 回读，确认 state 为 completed 且 assignee、priority 等保留字段未意外改变。
-6. 添加并回读发布评论；检查是否已有相同发布证据/版本/commit 的评论以避免重复。
+1. Validate the identifier matches the full boundary format `\b[A-Z0-9]{1,5}-\d+\b` (normalize case and format on comparison; prefixes may include letters and numbers, e.g. `w1n-11`); report format errors or non-existent issues individually.
+2. Read each issue, recording title, original state, team, assignee, priority, and release evidence; **verify team membership before each write** (team is the required write boundary).
+3. Skip already-completed issues; do not change canceled/tried; do not change backlog/unstarted and explain that the lifecycle must be followed first. Only startable states (started/Review etc.) enter the write path.
+4. Read the team's workflow states, uniquely resolve `completed_state`, and update using its ID.
+5. Read back to confirm state is completed and preserved fields (assignee, priority, etc.) have not been inadvertently changed.
+6. Add and read back a release comment; check for an identical release evidence/version/commit comment to avoid duplication.
 
-评论包含：版本、release commit、环境、时间、发布证据、调用来源，以及 `Marked by linear-workflow / mark-done`。不可用字段写 `—`，不编造。
+The comment includes: version, release commit, environment, timestamp, release evidence, calling source, and `Marked by linear-workflow / mark-done`. Unavailable fields show `—`, never fabricate.
 
-## 模式 B：从发布范围自动核对
+## Mode B: Automatic Reconciliation from Release Scope
 
-仅当没有显式 issue ID 时使用。优先采用调用方提供的 `previous_release_ref`、`current_release_ref`、`release_commit` 或 `release_version` 确定范围。缺失时可检查部署记录、release tag/branch 或发布 commit；若仍无法可靠确定范围，停止并要求范围或 issue IDs，**不得**随意扫描最近若干 commits。
+Used only when no explicit issue ID is provided. Prioritize scope determination from the caller-provided `previous_release_ref`, `current_release_ref`, `release_commit`, or `release_version`. When these are missing, check deployment records, release tags/branches, or release commits; if scope still cannot be reliably determined, stop and request the scope or issue IDs; **never** arbitrarily scan recent commits.
 
-收集范围内的 commit hash/message、branch、PR、Linear 关联、revert/cherry-pick/squash 信息与发布说明。merge commit 本身不作为完成证据，应检查其引入的实际提交；squash merge 可用 PR 标题/描述作为来源并注明。
+Collect commit hashes/messages, branches, PRs, Linear associations, revert/cherry-pick/squash information, and release notes within the scope. Merge commits alone are not completion evidence; check the actual commits they introduce. Squash merges may use the PR title/description as the source and should be noted.
 
-| 证据等级 | 可进入候选清单（不隐含授权写入） |
+| Evidence level | May enter candidate list (does not imply write authorization) |
 | --- | --- |
-| 强：完整 identifier 出现在 commit message、branch、PR 标题、Linear 关联或发布说明 | 可以加入候选清单 |
-| 弱：标题语义、修改文件、评论内容、时间或作者相似 | 不可以；仅展示候选并等待用户确认 |
+| Strong: full identifier appears in commit message, branch, PR title, Linear association, or release notes | May be added to candidate list |
+| Weak: title semantics, modified files, comment content, time, or author similarity | No; only show candidates and wait for user confirmation |
 
-> 强证据只是把 issue 加入**候选清单**，绝不隐含写入授权。是否写入由「授权」阶段决定（见下文四阶段与确认规则对照）。
+> Strong evidence only adds an issue to the **candidate list** and never implies write authorization. Whether to write is determined by the "Authorization" stage (see the four-stage process and confirmation rules below).
 
-完整边界匹配防止 `ABC-12` 命中 `ABC-123`。一个提交可关联多个 issue，同一 issue 可有多个提交。检测 `revert:`、`This reverts commit` 或等价撤销关系时，不将原变更自动 Done；仅当后续证据表明修复被恢复且已发布时才重新考虑。处理 revert of revert、cherry-pick、hotfix/release branch 时记录证据链。
+Full boundary matching prevents `ABC-12` matching `ABC-123`. A single commit may link to multiple issues, and a single issue may have multiple commits. When detecting `revert:`, `This reverts commit`, or equivalent revert relationships, do not auto-Done the original change; only reconsider when subsequent evidence indicates the fix was restored and is deployed. When processing revert-of-revert, cherry-pick, hotfix/release branches, record the evidence chain.
 
-将候选分为四个不可混淆的阶段：
+Divide candidates into four distinct stages:
 
-1. **发现（discovery）**：扫描发布范围，找出可能的 issue。
-2. **候选清单（proposed list）**：强证据可进入候选清单；弱证据仅展示候选。候选清单只是建议，不是待办。
-3. **授权（authorization）**：写入 `completed` 必须由用户明确确认，或可信调用方（release/deploy/review 自动化）在提供 `deployment_status=success` 与可信证据时授权。
-4. **变更（mutation）**：仅在阶段 3 授权后才执行实际状态写入与评论。
+1. **Discovery**: scan the release scope to find potential issues.
+2. **Proposed list**: strong evidence may enter the candidate list; weak evidence only shows candidates. The candidate list is a suggestion, not a to-do.
+3. **Authorization**: writing `completed` requires explicit user confirmation, or a trusted caller (release/deploy/review automation) providing `deployment_status=success` with trusted evidence.
+4. **Mutation**: actual state writes and comments are only executed after stage 3 authorization.
 
-对强证据列出候选清单；对弱证据显示：`Issue | 匹配依据 | 证据等级 | 建议`。**进入候选清单不等于获得写入授权**：自动推断的任何 issue 均需确认后才写入；显式 IDs 只需先回显清单，但同样需要发布确认（见确认发布前置条件）才授权写入。
+List candidates for strong evidence; for weak evidence display: `Issue | Match basis | Evidence level | Recommendation`. **Entering the candidate list does not equal write authorization**: any auto-inferred issue requires confirmation before writing; explicit IDs only need to echo the list first, but also require release confirmation (see Release Confirmation Prerequisites) before write authorization.
 
-### 确认规则对照（显式 ID vs 推断 ID）
+### Confirmation Rules Comparison (Explicit ID vs Inferred ID)
 
-| 来源 | 进入候选清单 | 授权写入所需确认 |
+| Source | Enters candidate list | Write authorization confirmation required |
 | --- | --- | --- |
-| 显式 ID（用户给出） | 是（直接定位） | 仍需发布确认：用户说已发布，或可信调用方 `deployment_status=success`+证据 |
-| 强推断（完整 identifier 出现在 commit/branch/PR/关联/发布说明） | 是 | 需用户或可信调用方明确授权；不得自动写入 |
-| 弱推断（语义/文件/评论/时间/作者相似） | 仅展示候选 | 需用户明确确认；不得自动写入 |
+| Explicit ID (user-provided) | Yes (directly located) | Still requires release confirmation: user says released, or trusted caller `deployment_status=success` + evidence |
+| Strong inference (full identifier in commit/branch/PR/association/release notes) | Yes | Requires explicit user or trusted caller authorization; must not auto-write |
+| Weak inference (semantic/file/comment/time/author similarity) | Only shows candidates | Requires explicit user confirmation; must not auto-write |
 
-无论来源，写入前都必须验证 team 归属；跨 team/跨 project 的候选一律不得写入，除非用户逐 issue 明确确认范围。
+Regardless of source, team membership must be verified before writing; cross-team/cross-project candidates are never written unless the user explicitly confirms scope for each issue.
 
-## 示例
+## Examples
 
-以下场景说明候选清单、授权与写入的边界：
+The following scenarios illustrate the boundaries between candidate list, authorization, and writing:
 
-- **显式 ID（授权后写入）**：用户说“W1N-20 已发布”，给出 `W1N-20`。验证为完整边界格式、读取 issue、确认 team 归属、用户已确认发布 → 授权写入 `completed`。
-- **强推断（候选，需授权）**：发布范围 commit 含 `Fix W1N-21 ...`，`W1N-21` 完整出现在 commit message。进入候选清单；但**不自动写入**，需用户或可信调用方确认后才写入。
-- **弱推断（仅候选，需确认）**：某 commit 修改了与 `W1N-22` 描述相关的文件，但无 identifier。仅展示为候选并说明匹配依据；不得写入，除非用户明确确认。
-- **无 project 的 issue（team 已验证可处理）**：`W1N-23` 属于团队 W1ndy 但无 Linear project。team 边界已验证且无 project-only 限制 → 可按上述规则正常处理；不因缺少 project 而阻塞。
-- **跨 project 候选（排除/需逐 issue 确认）**：发布范围推断出的 `OTHER-5` 属于另一 team/project。默认排除、仅报告为跨项目项；除非用户明确指定该项目范围并逐 issue 确认，否则不写入。
-- **跨 team 候选（一律排除）**：推断出的 issue 属于不同 team。无论证据强弱，一律不写入，team 为必需边界。
+- **Explicit ID (authorized write)**: User says "W1N-20 has been released", provides `W1N-20`. Validates full boundary format, reads issue, verifies team membership, user confirmed released → authorized to write `completed`.
+- **Strong inference (candidate, requires authorization)**: Release scope commit contains `Fix W1N-21 ...`, `W1N-21` fully appears in commit message. Enters candidate list; but **does not auto-write**; requires user or trusted caller confirmation before writing.
+- **Weak inference (candidate only, requires confirmation)**: A commit modifies files related to `W1N-22` description, but no identifier. Only shown as candidate with match basis explained; must not write unless user explicitly confirms.
+- **Issue without a project (team verified, processable)**: `W1N-23` belongs to team W1ndy but has no Linear project. Team boundary verified and no project-only restriction → may be processed per the above rules; not blocked by missing project.
+- **Cross-project candidate (exclude/require per-issue confirmation)**: Release scope infers `OTHER-5` belongs to a different team/project. Excluded by default, only reported as cross-project item; unless user explicitly specifies that project scope and confirms per-issue, do not write.
+- **Cross-team candidate (always excluded)**: Inferred issue belongs to a different team. Regardless of evidence strength, never write; team is the required boundary.
 
-## 批量执行、幂等性与部分失败
+## Batch Execution, Idempotency, and Partial Failure
 
-将每个 issue 作为独立单元：读取 → 映射 completed → 更新 → 回读 → 评论 → 回读。一个 issue 失败不阻止其他已确认、独立 issue 的处理；认证/全局集成不可用等全局故障除外。
+Treat each issue as an independent unit: read → map completed → update → read back → comment → read back. One issue's failure does not prevent processing of other confirmed, independent issues; global faults like auth/integration unavailable are the exception.
 
-- 每次写入前读取；已在目标状态时跳过状态写入。
-- 更新超时后先重新读取，确认是否已成功，再决定是否重试。
-- 状态成功、评论失败：报告部分成功，保留待补评论内容；重跑时仅补评论。
-- 评论成功、状态失败：报告部分成功，不称为 Done；重跑时仅处理状态并避免重复评论。
-- issue 被取消、删除、归档、无权限或 team/state 不存在时，记录该 issue 失败并继续其他可处理项。
+- Read before every write; skip state write when already in the target state.
+- After update timeout, re-read first to confirm whether it succeeded before deciding whether to retry.
+- State succeeded, comment failed: report partial success, retain pending comment content; on re-run, only补the comment.
+- Comment succeeded, state failed: report partial success, do not call it Done; on re-run, only handle the state and avoid duplicate comments.
+- When an issue is cancelled, deleted, archived, has no permissions, or team/state does not exist, record that issue as failed and continue with other processable items.
 
-最终报告：
+Final report:
 
-| Issue | 标题 | 原状态 | 目标状态 | 状态结果 | 评论结果 | 证据 | 备注 |
+| Issue | Title | Original state | Target state | State result | Comment result | Evidence | Notes |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 
-将结果区分为 updated、already done、skipped、failed、needs confirmation。对于每项失败，输出：
+Categorize results as updated, already done, skipped, failed, needs confirmation. For each failure, output:
 
 ```text
-Issue：
-步骤：
-结果：
-错误原因：
-是否可重试：
-建议处理方式：
+Issue:
+Step:
+Result:
+Error reason:
+Retryable:
+Suggested action:
 ```
