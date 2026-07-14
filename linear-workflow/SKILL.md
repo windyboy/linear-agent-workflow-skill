@@ -138,7 +138,7 @@ Map the target state by this priority: verified explicit state ID → state `typ
 "What requirements are left", "what bugs are there", "show me the Linear backlog" these mean browsing only, not changing issues. First determine scope from team, project, assignee etc. that the user provides; ask when scope is unclear and cannot be safely defaulted.
 
 1. Paginate to completion, a clear result cap, or when the tool cannot continue; explain coverage/cap.
-2. Exclude types `completed`, `canceled`, and `tried`; keep backlog, unstarted, started, and Review.
+2. Exclude types `completed`, `canceled`, and `triage`; keep backlog, unstarted, started, and Review.
 3. First alert issues already in started/Review; sort the rest by Urgent, High, Medium, Low, no priority, with same priority by updatedAt, createdAt, identifier.
 4. Classify as Bug vs Feature/Other using issue type, labels, project conventions. Mark "inferred" when only inferred from title or description.
 5. Output `ID | Title | Type | Priority | Status | Assignee | Project`; missing fields show `—`, never fabricate.
@@ -157,7 +157,7 @@ Output an implementation plan containing at minimum: problem and acceptance crit
 
 After user confirmation, re-read the current issue/state and team states:
 
-1. If already in started/Review, do not re-write; state the current status. If completed/canceled/tried, do not auto-reopen; requires explicit user request. If assigned to someone else, inform the user and do not change assignee unilaterally.
+1. If already in started/Review, do not re-write; state the current status. If completed/canceled/triage, do not auto-reopen; requires explicit user request. If assigned to someone else, inform the user and do not change assignee unilaterally.
 2. For startable backlog/unstarted, update to the actual `started_state`; only set current user as assignee when requested by user and supported by tools.
 3. Read back to confirm target state ID/type; if verification fails, do not create branches or modify code.
 4. Create a dedicated branch based on existing project branch conventions; when no conventions exist, suggest a short name containing the full issue identifier. Check the workspace before creating; never overwrite uncommitted user changes.

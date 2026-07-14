@@ -63,7 +63,7 @@ Entered when the user explicitly provides a valid identifier. **Explicit IDs onl
 
 1. Validate the identifier matches the full boundary format `\b[A-Z0-9]{1,5}-\d+\b` (normalize case and format on comparison; prefixes may include letters and numbers, e.g. `w1n-11`); report format errors or non-existent issues individually.
 2. Read each issue, recording title, original state, team, assignee, priority, and release evidence; **verify team membership before each write** (team is the required write boundary).
-3. Skip already-completed issues; do not change canceled/tried; do not change backlog/unstarted and explain that the lifecycle must be followed first. Only startable states (started/Review etc.) enter the write path.
+3. Skip already-completed issues; do not change canceled/triage; do not change backlog/unstarted and explain that the lifecycle must be followed first. Only startable states (started/Review etc.) enter the write path.
 4. Read the team's workflow states, uniquely resolve `completed_state`, and update using its ID.
 5. Read back to confirm state is completed and preserved fields (assignee, priority, etc.) have not been inadvertently changed.
 6. Add and read back a release comment; check for an identical release evidence/version/commit comment to avoid duplication.
