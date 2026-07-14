@@ -6,8 +6,17 @@ A host-agnostic Agent Skill for safely managing the complete Linear issue delive
 
 ```text
 linear-workflow/
-├── SKILL.md       # Main lifecycle workflow
-└── mark-done.md   # Independently callable post-release Done workflow
+├── SKILL.md                  # Main lifecycle workflow
+├── mark-done.md              # Independently callable post-release Done workflow
+└── references/
+    └── templates/            # Concise issue-creation and review templates
+        ├── README.md
+        ├── idea-feature.md
+        ├── bug-report.md
+        ├── refactor.md
+        ├── change-review.md
+        ├── release-review.md
+        └── finding.md
 ```
 
 The packaged artifact is available at `dist/linear-workflow.skill`.
@@ -48,6 +57,19 @@ Discover a need or problem
 Install or load the `linear-workflow` directory or the packaged `.skill` artifact using your Agent runtime's normal Skill mechanism. Provide a Linear integration with equivalent capabilities to list/search issues, get issue details, inspect workflow states, update issues, and create comments.
 
 The Skill deliberately does not depend on a particular host, CLI, directory convention, MCP server name, or tool function name.
+
+## Templates
+
+The skill ships a small, reusable template system for creating well-structured Linear issues and reviewing changes. It contains exactly five top-level templates plus one shared format:
+
+- **Idea / Feature** — new ideas and user-visible capabilities.
+- **Bug Report** — behavior that differs from the documented or expected result.
+- **Refactor** — internal restructuring with no intended public behavior change.
+- **Change Review** — Quick or Full review of code, docs, workflow rules, or structural changes.
+- **Release Review** — packaging and release-readiness verification.
+- **Finding** (shared, not a sixth top-level template) — used inside Change Review findings.
+
+Select one template per request using the routing table in `linear-workflow/references/templates/README.md`. The skill uses the selected template when drafting or creating an issue; this never bypasses the required user-confirmation gate before creation. Optional fields are left blank or marked `unknown` rather than fabricated.
 
 ## Done workflow integration
 

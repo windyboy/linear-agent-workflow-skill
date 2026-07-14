@@ -136,3 +136,22 @@ Issue：
 是否可重试：
 建议处理方式：
 ```
+
+## 9. 模板系统：Issue 创建与评审
+
+草稿或创建 Linear issue 时，按下方路由表选择**一个**模板（`references/templates/`）。模板只收集会改变计划、实现、安全或验证的信息；可选字段留空或写 `unknown`，不得编造。
+
+| 请求 | 模板 |
+| -- | -- |
+| 新想法或可用户感知的能力 | Idea / Feature |
+| 现有行为错误 | Bug Report |
+| 内部结构应改善但不改变预期行为 | Refactor |
+| 评审变更、PR 或工作流设计 | Change Review |
+| 校验打包产物或发布 | Release Review |
+
+- 模板文件：`idea-feature.md`、`bug-report.md`、`refactor.md`、`change-review.md`、`release-review.md`；共享 `finding.md` 仅用于 Change Review 的 Findings，不是第六个顶层模板。
+- Change Review 用 `Review depth: Quick | Full` 字段区分深度，不拆成两个模板。
+- Refactor 必须记录不变式：不得产生非预期的公开 API、行为、生命周期、状态或输出格式变化。
+- **使用模板不绕过创建 issue 前的用户确认**：选好模板、填好字段后，仍须按 §2 的确认规则获得用户明确确认，才能创建 issue。
+- 组合类型请求：选一个主模板，其余用关联 issue 跟进，不产出大混合 issue。
+- 模板总览与选择见 `references/templates/README.md`。
