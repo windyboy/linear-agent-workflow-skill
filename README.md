@@ -6,10 +6,19 @@ A host-agnostic Agent Skill for safely managing the complete Linear issue delive
 
 ```text
 linear-workflow/
-├── SKILL.md                  # Main lifecycle workflow
-├── mark-done.md              # Independently callable post-release Done workflow
+├── SKILL.md                        # Compact state-machine router + safety invariants
+├── mark-done.md                    # Independently callable post-release Done workflow
 └── references/
-    └── templates/            # Concise issue-creation and review templates
+    ├── capability-discovery.md     # Tool capability mapping (first operation)
+    ├── issue-discovery.md          # Browsing, creating, querying issues
+    ├── start-implementation.md     # Read, plan, branch, implement
+    ├── move-to-review.md           # Verification, acceptance, Review transition
+    ├── output-contracts.md         # Error format, idempotency rules
+    ├── project-scope.md            # Scope boundary decisions
+    ├── resume-work.md              # Resuming interrupted work
+    ├── review-gate-policy.md       # Configurable Review trigger
+    ├── template-system.md          # Issue creation templates
+    └── templates/                  # Concise issue-creation and review templates
         ├── README.md
         ├── idea-feature.md
         ├── bug-report.md

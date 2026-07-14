@@ -1,0 +1,30 @@
+# Move to Review
+
+The trigger for moving to Review is determined by the [Review Gate Policy](review-gate-policy.md). Before executing, read the policy (repository instructions → team/project instructions → user selection → default `user_acceptance`).
+
+## Policy `user_acceptance` (default)
+
+After automated verification, commit/PR/CI status have all been truthfully summarized, request final acceptance:
+
+> Please verify whether the issue identified by ISSUE-ID has been resolved. Once you confirm, I will move it to the Review state.
+
+When the user says the issue still exists or acceptance fails, stay in started, record feedback (add a "pending further investigation" comment if the user/caller requests), and continue fixing; do not add a "resolved" comment or move to Review.
+
+Only when the user explicitly states acceptance has passed (e.g. "I verified it" or "acceptance passed") does the move to Review trigger.
+
+## Policy `pr_ready`
+
+After the PR is created and CI passes, the issue may move to Review without waiting for user acceptance. When moving to Review:
+1. Confirm PR and CI status with the user.
+2. Explicitly inform: under this policy, user acceptance occurs during the Review stage (verified during human review).
+
+## Common Steps
+
+Regardless of policy, after the move-to-review trigger fires:
+1. Re-read the issue, get team states, and resolve an unambiguous `review_state`.
+2. If already in the target Review state, skip the state write; check for an identical audit comment to avoid duplication.
+3. After updating state, read back to confirm actual state; if failed, report and do not claim success.
+4. Add and read back a resolution summary comment: Resolution summary, Root cause, Implementation, Key files, Validation performed, Validation not performed, Known limitations, Commit/PR reference.
+5. State succeeded but comment failed: explicitly report "state succeeded, comment failed"; comment succeeded but state failed: report separately, and do not claim moved to Review.
+
+Human Review, CI review, and Merge are performed by the current project process or corresponding Skill. After Merge, stay in Review (or team-defined equivalent non-completed state) until a real release/deployment succeeds.
