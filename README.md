@@ -89,3 +89,18 @@ Select one template per request using the routing table in `linear-workflow/refe
 ## Done workflow integration
 
 Release, deployment, or review automation can independently invoke `mark-done.md`. Provide verified deployment status and, when available, project scope, release version, release commit, release range, environment, and deployment evidence.
+
+## Development: Validation and Packaging
+
+The skill ships with lightweight, dependency-free validation so defects (invalid state-type literals, broken links, regex divergence, stale bundles) cannot survive review.
+
+| Command | Purpose |
+| --- | --- |
+| `npm run validate` | Run all static checks (frontmatter, name/dir conventions, relative links, referenced repo paths, state-type literals, canonical identifier policy, dist parity/staleness) **and** the deterministic behavior scenarios. Exits non-zero on any failure. |
+| `npm run test` | Run only the behavior scenario tests. |
+| `npm run package` | Rebuild `dist/linear-workflow.skill` from `linear-workflow/` so the bundle stays in parity with the source. |
+| `npm run ci` | `npm run package` then `npm run validate` (used by CI). |
+
+`npm run validate` is the single local command for validation. It requires no Linear workspace and performs no writes. A deliberately stale bundle or a broken link causes a non-zero exit.
+
+GitHub Actions runs `npm run package && npm run validate` for every pull request and on the default branch (see `.github/workflows/validate.yml`).

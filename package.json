@@ -1,0 +1,14 @@
+{
+  "scripts": {
+    "validate": "node scripts/validate.mjs",
+    "test": "node scripts/behavior.test.mjs",
+    "package": "node scripts/package.mjs",
+    "ci": "npm run package && npm run validate"
+  },
+  "dependencies": {
+    "gitnexus": "^1.6.9"
+  },
+  "trustedDependencies": [
+    "@ladybugdb/core"
+  ]
+}
