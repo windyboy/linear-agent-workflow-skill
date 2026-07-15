@@ -367,7 +367,6 @@ export function getSchema() {
     properties: {
       version: { type: 'integer', const: 1 },
       profile: { type: 'string', enum: Object.keys(PROFILE_DEFAULTS) },
-      overrides: { type: 'object' },
       overrides: {
         type: 'object',
         properties: Object.fromEntries(
@@ -378,6 +377,8 @@ export function getSchema() {
         ),
       },
     },
-    required: ['profile'],
+    // Both version and profile are required by validateConfig for a present
+    // config file, so the schema must declare both.
+    required: ['version', 'profile'],
   };
 }

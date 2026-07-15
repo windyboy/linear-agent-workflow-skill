@@ -24,7 +24,7 @@ overrides:
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Linear Workflow Configuration",
   "type": "object",
-  "required": ["version"],
+  "required": ["version", "profile"],
   "properties": {
     "version": {
       "type": "integer",
@@ -51,7 +51,7 @@ overrides:
         },
         "completion_gate": {
           "type": "string",
-          "enum": ["merge", "release_confirmed", "production_deployment", "manual"]
+          "enum": ["release_confirmed", "production_deployment", "manual"]
         },
         "audit_comments": {
           "type": "string",
@@ -176,7 +176,7 @@ Controls the detail level of Agent output and reports.
 ```yaml
 profile: minimal
 
-strategy:
+overrides:
   plan_confirmation: implicit
   review_gate: pr_ready
   completion_gate: release_confirmed
@@ -199,7 +199,7 @@ strategy:
 ```yaml
 profile: standard
 
-strategy:
+overrides:
   plan_confirmation: risk_based
   review_gate: pr_ready
   completion_gate: release_confirmed
@@ -222,7 +222,7 @@ strategy:
 ```yaml
 profile: strict
 
-strategy:
+overrides:
   plan_confirmation: explicit
   review_gate: user_acceptance
   completion_gate: production_deployment
@@ -341,7 +341,7 @@ Users can override strategy items, but with the following restrictions:
 
 ```yaml
 # ❌ Invalid schema
-profile: "minimal"  # Must be string without quotes in YAML
+profile: "minimal"  # quoted strings are valid YAML; the real error is the unknown strategy item below
 overrides:
   invalid_item: true  # Unknown strategy item
 

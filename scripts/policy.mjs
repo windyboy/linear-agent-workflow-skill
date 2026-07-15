@@ -10,6 +10,8 @@
 // documented regex literal matches IDENTIFIER_PATTERN, preventing the
 // "regex divergence" defect called out in W1N-17.
 
+import { PROFILE_DEFAULTS } from './profile-parser.mjs';
+
 // Canonical identifier extraction/validation pattern. Boundary-safe: a 1-5 char
 // uppercase alphanumeric team key, a hyphen, then digits. Mirrors SKILL.md
 // ("extracted via boundary-safe regex \b[A-Z0-9]{1,5}-\d+\b") and mark-done.md.
@@ -46,18 +48,14 @@ export function isValidStateType(t) {
 
 // The Completion Gate is determined by the active Profile.
 // This function returns the gate based on profile and strategy overrides.
+// Single source of truth for profile defaults lives in profile-parser.mjs
+// (PROFILE_DEFAULTS); resolve the completion gate from there rather than
+// maintaining a second copy that can drift.
 export function getCompletionGate(profile = 'standard', overrides = {}) {
   // Explicit override takes precedence
   if (overrides.completion_gate) return overrides.completion_gate;
-  
-  // Profile defaults
-  const profileDefaults = {
-    minimal: 'release_confirmed',
-    standard: 'release_confirmed',
-    strict: 'production_deployment',
-  };
-  
-  return profileDefaults[profile] || profileDefaults.standard;
+  const defaults = PROFILE_DEFAULTS[profile] || PROFILE_DEFAULTS.standard;
+  return defaults.completion_gate;
 }
 
 // Backward compatibility: export the strict default
@@ -91,11 +89,14 @@ export function isDoneEligible({
       return manualConfirmation === true;
     // release_confirmed (default): user confirmation OR trusted deployment.
     case 'release_confirmed':
-    default:
       return (
         userConfirmedRelease === true ||
         (deploymentStatus === 'success' && Boolean(deploymentEvidence))
       );
+    // Fail closed: an unknown or misspelled completion gate must never be
+    // silently treated as release_confirmed.
+    default:
+      return false;
   }
 }
 

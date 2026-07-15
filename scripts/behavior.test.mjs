@@ -146,6 +146,19 @@ scenario('Done eligibility respects the completion gate', () => {
   }
 });
 
+// 6c. An unknown/misspelled completion gate fails closed (never release_confirmed).
+scenario('Unknown completion gate fails closed', () => {
+  if (isDoneEligible({ completionGate: 'typo_gate' }) !== false) {
+    throw new Error('unknown completion gate was silently eligible');
+  }
+  if (isDoneEligible({ completionGate: 'merge' }) !== false) {
+    throw new Error('removed completion gate "merge" was silently eligible');
+  }
+  if (isDoneEligible({ completionGate: '', userConfirmedRelease: true }) !== false) {
+    throw new Error('empty completion gate was silently eligible');
+  }
+});
+
 // 7. Comment failure is reported as partial success.
 scenario('Comment failure is reported as partial success', () => {
   const r = summarizePartial(true, false);

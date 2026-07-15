@@ -2,8 +2,15 @@
 
 // scripts/diagnose.mjs
 // CLI tool for diagnosing Profile and configuration.
+//
+// Protocol:
+//   linear-workflow config diagnose [config-file]
+//   linear-workflow config schema
+//   linear-workflow help
+// A missing config file falls back to the `standard` profile (allowed), but a
+// present file that is invalid fails closed (exit 1).
 
-import { parseConfig, mergeConfig, validateConfig, diagnose, getSchema } from './profile-parser.mjs';
+import { parseConfig, validateConfig, diagnose, getSchema } from './profile-parser.mjs';
 
 const args = process.argv.slice(2);
 const command = args[0] || 'help';
@@ -12,51 +19,78 @@ switch (command) {
   case 'config':
     handleConfig(args.slice(1));
     break;
-  case 'schema':
-    handleSchema();
-    break;
   case 'help':
-  default:
+  case '--help':
+  case '-h':
     showHelp();
+    break;
+  default:
+    console.error(`Unknown command: ${command}`);
+    showHelp();
+    process.exit(1);
 }
 
-function handleConfig(args) {
-  const configFile = args[0] || 'linear-workflow.config.yaml';
-  const config = parseConfig(configFile);
-  
+function handleConfig(rest) {
+  const sub = rest[0] || 'diagnose';
+  const configFile = rest[1]; // optional path
+  switch (sub) {
+    case 'diagnose':
+      runDiagnose(configFile);
+      break;
+    case 'schema':
+      runSchema();
+      break;
+    default:
+      console.error(`Unknown config subcommand: ${sub}`);
+      showHelp();
+      process.exit(1);
+  }
+}
+
+function runDiagnose(configFile) {
+  const file = configFile || 'linear-workflow.config.yaml';
+  let config;
+  try {
+    config = parseConfig(file);
+  } catch (e) {
+    console.error('Configuration error:');
+    console.error('  ' + e.message);
+    process.exit(1);
+  }
+
   const validation = validateConfig(config);
   if (!validation.valid) {
     console.error('Configuration errors:');
-    validation.errors.forEach(e => console.error(`  - ${e}`));
+    validation.errors.forEach((err) => console.error(`  - ${err}`));
     process.exit(1);
   }
-  
-  const output = diagnose(config.profile, config.overrides || {});
-  console.log(output);
+
+  console.log(diagnose(config.profile, config.overrides || {}));
 }
 
-function handleSchema() {
-  const schema = getSchema();
-  console.log(JSON.stringify(schema, null, 2));
+function runSchema() {
+  console.log(JSON.stringify(getSchema(), null, 2));
 }
 
 function showHelp() {
   console.log(`
-linear-workflow config diagnose
+linear-workflow - Linear workflow profile configuration CLI
 
 Usage:
-  node scripts/diagnose.mjs config [config-file]
-  node scripts/diagnose.mjs schema
-  node scripts/diagnose.mjs help
+  linear-workflow config diagnose [config-file]
+  linear-workflow config schema
+  linear-workflow help
 
 Commands:
-  config [file]     Diagnose configuration from file (default: linear-workflow.config.yaml)
-  schema            Output JSON Schema for configuration
-  help              Show this help message
+  config diagnose [file]   Diagnose effective configuration. Reads [file]
+                           (default: linear-workflow.config.yaml). A missing
+                           file falls back to the standard profile.
+  config schema            Print the JSON Schema for configuration.
+  help                     Show this help message.
 
 Examples:
-  node scripts/diagnose.mjs config
-  node scripts/diagnose.mjs config ./my-config.yaml
-  node scripts/diagnose.mjs schema > schema.json
+  linear-workflow config diagnose
+  linear-workflow config diagnose ./my-config.yaml
+  linear-workflow config schema > schema.json
 `);
 }

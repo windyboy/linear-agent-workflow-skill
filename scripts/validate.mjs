@@ -13,6 +13,7 @@ import { join, dirname, resolve, relative, basename } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import { IDENTIFIER_PATTERN, VALID_STATE_TYPES, NON_STATE_WORDS } from './policy.mjs';
+import { getSchema } from './profile-parser.mjs';
 import { runBehaviorTests } from './behavior.test.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -191,6 +192,57 @@ group('Behavior scenario tests');
   const { passed, failed, total } = runBehaviorTests();
   if (failed) fail(`${failed}/${total} behavior scenario(s) failed`);
   else ok(`${passed}/${total} behavior scenario(s) passed`);
+}
+
+// --- 8. configuration-schema.md ↔ programmatic schema parity ---------------
+// The code (getSchema()/STRATEGY_SCHEMA) is the single source of truth; the
+// markdown must not drift into a third, hand-maintained definition.
+group('configuration-schema.md ↔ getSchema() parity');
+{
+  const docPath = join(skillDir, 'references', 'configuration-schema.md');
+  if (!existsSync(docPath)) {
+    fail('configuration-schema.md missing');
+  } else {
+    const text = readFileSync(docPath, 'utf8');
+    const m = text.match(/```json\n([\s\S]*?)\n```/);
+    if (!m) {
+      fail('configuration-schema.md has no JSON schema block');
+    } else {
+      let docSchema;
+      try {
+        docSchema = JSON.parse(m[1]);
+      } catch (e) {
+        fail('configuration-schema.md JSON schema is not valid JSON: ' + e.message);
+      }
+      if (docSchema) {
+        const codeSchema = getSchema();
+        const reqMatch =
+          JSON.stringify((docSchema.required || []).slice().sort()) ===
+          JSON.stringify((codeSchema.required || []).slice().sort());
+        if (reqMatch) ok(`required matches: ${codeSchema.required.join(', ')}`);
+        else fail(`required mismatch: doc=${JSON.stringify(docSchema.required)} code=${JSON.stringify(codeSchema.required)}`);
+
+        const docProps = docSchema.properties?.overrides?.properties || {};
+        const codeProps = codeSchema.properties?.overrides?.properties || {};
+        let drift = 0;
+        for (const key of Object.keys(codeProps)) {
+          const de = docProps[key]?.enum;
+          const ce = codeProps[key]?.enum;
+          if (JSON.stringify((de || []).slice().sort()) !== JSON.stringify((ce || []).slice().sort())) {
+            fail(`enum drift for '${key}': doc=${JSON.stringify(de)} code=${JSON.stringify(ce)}`);
+            drift++;
+          }
+        }
+        for (const key of Object.keys(docProps)) {
+          if (!codeProps[key]) {
+            fail(`doc defines unknown strategy item '${key}'`);
+            drift++;
+          }
+        }
+        if (drift === 0) ok('all strategy-item enums match getSchema()');
+      }
+    }
+  }
 }
 
 // --- Summary ----------------------------------------------------------------
