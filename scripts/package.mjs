@@ -50,10 +50,14 @@ try {
 // Step 5: Generate source hash (for drift detection)
 const sourceHash = generateDirectoryHash(src);
 
-// Step 6: Get git commit hash for source tracking
+// Step 6: Get the build commit (HEAD) and the source commit that last touched
+// the skill source tree. They differ when a repo commit only syncs the generated
+// .forge copy while the skill source still corresponds to an earlier commit.
+let buildCommit = 'unknown';
 let sourceCommit = 'unknown';
 try {
-  sourceCommit = execSync('git rev-parse HEAD', { cwd: root, stdio: 'pipe' }).toString().trim();
+  buildCommit = execSync('git rev-parse HEAD', { cwd: root, stdio: 'pipe' }).toString().trim();
+  sourceCommit = execSync('git log -1 --format=%H -- linear-workflow/', { cwd: root, stdio: 'pipe' }).toString().trim();
 } catch (e) {
   console.warn('warning: could not get git commit hash');
 }
@@ -68,10 +72,9 @@ console.log('✓ Packaged ' + out);
 const metadata = {
   version: packageVersion,
   timestamp: new Date().toISOString(),
-  sourceCommit: sourceCommit,
+  source_commit: sourceCommit,
+  build_commit: buildCommit,
   sourceHash: sourceHash,
-  artifactPath: out,
-  metadataPath: metadataFile,
   profiles: ['minimal', 'standard', 'strict'],
   invariants: 5,
   templates: 6,

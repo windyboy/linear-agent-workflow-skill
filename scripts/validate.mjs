@@ -160,6 +160,31 @@ group('Packaged artifact (dist) parity and staleness');
   }
 }
 
+// --- 6b. Generated .forge runtime copy parity ------------------------------
+group('Generated .forge runtime copy parity');
+{
+  const forgeSkill = join(root, '.forge', 'skills', 'linear-workflow');
+  if (!existsSync(forgeSkill)) {
+    fail(`.forge/skills/linear-workflow/ missing (run "npm run sync:forge")`);
+  } else {
+    const srcFiles = collect(skillDir);
+    const forgeFiles = collect(forgeSkill);
+    const srcSet = new Set(srcFiles);
+    const forgeSet = new Set(forgeFiles);
+    for (const f of srcFiles) if (!forgeSet.has(f)) fail(`source file missing from .forge copy: ${f}`);
+    for (const f of forgeFiles) if (!srcSet.has(f)) fail(`.forge copy has stale file not in source: ${f}`);
+    let drift = 0;
+    for (const f of srcFiles) {
+      if (!forgeSet.has(f)) continue;
+      if (sha(join(skillDir, f)) !== sha(join(forgeSkill, f))) {
+        fail(`drift: ${f} differs between linear-workflow/ and .forge copy`);
+        drift++;
+      }
+    }
+    if (drift === 0) ok('.forge copy is byte-for-byte identical to linear-workflow/');
+  }
+}
+
 // --- 7. Behavior scenario tests --------------------------------------------
 group('Behavior scenario tests');
 {

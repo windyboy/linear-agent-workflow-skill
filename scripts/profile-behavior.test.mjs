@@ -131,7 +131,7 @@ scenario('getCompletionGate returns correct value for each profile', () => {
 
 // 9. Validation accepts a valid minimal config and rejects an unknown profile
 scenario('Validation accepts valid config and rejects unknown profile', () => {
-  const ok = validateConfig({ profile: 'minimal' });
+  const ok = validateConfig({ version: 1, profile: 'minimal' });
   if (!ok.valid) throw new Error('valid minimal config was rejected: ' + ok.errors.join('; '));
 
   const bad = validateConfig({ profile: 'bogus' });
@@ -205,7 +205,7 @@ scenario('parseConfig reads nested overrides from a YAML file (fail closed on ba
   // An existing but invalid config file must FAIL CLOSED (throw), not silently pass.
   assertThrows(
     () => parseFile('profile: minimal\noverrides:\n  completion_gate: production_deployment\n'),
-    /invalid/i,
+    /invalid|required|forbidden|version/i,
     'invalid config file should throw'
   );
 
@@ -252,6 +252,77 @@ scenario('production_deployment + implicit plan_confirmation is forbidden', () =
     overrides: { completion_gate: 'production_deployment', plan_confirmation: 'implicit' },
   });
   if (res.valid) throw new Error('production_deployment + implicit was accepted');
+});
+
+// 18. present config without `version` fails closed
+scenario('present config without version fails closed', () => {
+  const res = validateConfig({ profile: 'minimal' });
+  if (res.valid) throw new Error('config without version was accepted');
+  if (!res.errors.some((e) => /version/i.test(e))) {
+    throw new Error('missing version not reported: ' + res.errors.join('; '));
+  }
+});
+
+// 19. unsupported version fails closed
+scenario('unsupported version fails closed', () => {
+  const res = validateConfig({ version: 2, profile: 'minimal' });
+  if (res.valid) throw new Error('unsupported version was accepted');
+});
+
+// 20. present config without `profile` fails closed
+scenario('present config without profile fails closed', () => {
+  const res = validateConfig({ version: 1, overrides: { completion_gate: 'manual' } });
+  if (res.valid) throw new Error('config without profile was accepted');
+  if (!res.errors.some((e) => /profile/i.test(e))) {
+    throw new Error('missing profile not reported: ' + res.errors.join('; '));
+  }
+});
+
+// 21. overrides must be an object (scalar rejected)
+scenario('non-object overrides fail closed', () => {
+  const res = validateConfig({ version: 1, profile: 'minimal', overrides: 'production_deployment' });
+  if (res.valid) throw new Error('scalar overrides was accepted');
+});
+
+// 22. unknown top-level key rejected
+scenario('unknown top-level key fails closed', () => {
+  const res = validateConfig({ version: 1, profile: 'minimal', foo: 'bar' });
+  if (res.valid) throw new Error('unknown top-level key was accepted');
+});
+
+// 23. garbage line (no colon) in YAML fails closed
+scenario('garbage YAML line fails closed', () => {
+  assertThrows(
+    () => parseFile('this is not valid yaml'),
+    /invalid yaml/i,
+    'garbage YAML should throw'
+  );
+});
+
+// 24. unknown top-level YAML key fails closed
+scenario('unknown top-level YAML key fails closed', () => {
+  assertThrows(
+    () => parseFile('version: 1\nprofile: minimal\nbogus_key: yes\n'),
+    /unknown top-level|invalid yaml/i,
+    'unknown top-level YAML key should throw'
+  );
+});
+
+// 25. complete valid config (version + profile + nested overrides) parses cleanly
+scenario('complete valid config parses cleanly', () => {
+  const config = parseFile([
+    'version: 1',
+    'profile: standard',
+    'overrides:',
+    '  completion_gate: manual',
+    '  audit_comments: detailed',
+  ].join('\n'));
+  assertEqual(config.profile, 'standard', 'profile');
+  assertDeepEqual(
+    config.overrides,
+    { completion_gate: 'manual', audit_comments: 'detailed' },
+    'overrides'
+  );
 });
 
 export function runProfileBehaviorTests() {

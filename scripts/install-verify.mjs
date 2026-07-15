@@ -63,7 +63,8 @@ try {
 ok('Metadata valid');
 console.log('  Version: ' + metadata.version);
 console.log('  Timestamp: ' + metadata.timestamp);
-console.log('  Source commit: ' + (metadata.sourceCommit && metadata.sourceCommit !== 'unknown' ? metadata.sourceCommit.substring(0, 8) : 'unknown'));
+console.log('  Source commit: ' + (metadata.source_commit && metadata.source_commit !== 'unknown' ? metadata.source_commit.substring(0, 8) : 'unknown'));
+console.log('  Build commit: ' + (metadata.build_commit && metadata.build_commit !== 'unknown' ? metadata.build_commit.substring(0, 8) : 'unknown'));
 
 // Step 5: Verify critical files exist in source
 const criticalFiles = [

@@ -63,17 +63,40 @@ export function getCompletionGate(profile = 'standard', overrides = {}) {
 // Backward compatibility: export the strict default
 export const COMPLETION_GATE = 'production_deployment';
 
-// Scenario 5 + 6: merge alone never marks Done; a successful production
-// deployment (or explicit user release confirmation) satisfies the Done gate.
-export function isDoneEligible(evidence = {}) {
-  if (evidence.mergeOnly === true) return false;
-  if (evidence.merge === true && !evidence.deploymentStatus && !evidence.userConfirmedRelease) {
-    return false;
+// Scenario 5 + 6: merge alone never marks Done; the Done gate is satisfied
+// according to the active Profile's completion_gate. The gate MUST be passed in
+// (derived from the active profile + overrides via getCompletionGate) so the
+// policy cannot be bypassed by an implicit default.
+//   release_confirmed   -> user release confirmation OR trusted deployment success
+//   production_deployment -> trusted production deployment evidence ONLY (strict)
+//   manual              -> explicit manual confirmation ONLY
+//   merge-only          -> never eligible
+export function isDoneEligible({
+  completionGate = 'release_confirmed',
+  deploymentStatus,
+  deploymentEvidence,
+  userConfirmedRelease = false,
+  manualConfirmation = false,
+  mergeOnly = false,
+} = {}) {
+  // Scenario 5: merge alone never marks Done.
+  if (mergeOnly === true) return false;
+
+  switch (completionGate) {
+    // Strict: only trusted production deployment evidence satisfies the gate.
+    case 'production_deployment':
+      return deploymentStatus === 'success' && Boolean(deploymentEvidence);
+    // Manual: an explicit manual confirmation is required.
+    case 'manual':
+      return manualConfirmation === true;
+    // release_confirmed (default): user confirmation OR trusted deployment.
+    case 'release_confirmed':
+    default:
+      return (
+        userConfirmedRelease === true ||
+        (deploymentStatus === 'success' && Boolean(deploymentEvidence))
+      );
   }
-  return (
-    evidence.deploymentStatus === 'success' ||
-    evidence.userConfirmedRelease === true
-  );
 }
 
 // Scenario 10: classify an issue as Bug vs Feature/Other. A `triage` label is a

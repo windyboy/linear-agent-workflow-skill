@@ -96,17 +96,53 @@ scenario('A timed-out update is read back before retry', () => {
   }
 });
 
-// 5. Merge alone does not mark Done.
+// 5. Merge alone does not mark Done (any completion gate).
 scenario('Merge alone does not mark Done', () => {
-  if (isDoneEligible({ merge: true }) !== false) {
-    throw new Error('merge alone marked Done');
+  if (isDoneEligible({ mergeOnly: true, completionGate: 'release_confirmed' }) !== false) {
+    throw new Error('merge-only marked Done');
+  }
+  if (isDoneEligible({ mergeOnly: true, completionGate: 'production_deployment' }) !== false) {
+    throw new Error('merge-only marked Done under strict gate');
   }
 });
 
-// 6. Successful production deployment can satisfy the Done gate.
-scenario('Successful production deployment can satisfy the Done gate', () => {
-  if (isDoneEligible({ deploymentStatus: 'success', deploymentEvidence: 'https://ci/deploy/123' }) !== true) {
+// 6. Successful production deployment satisfies the release_confirmed gate.
+scenario('Successful production deployment satisfies the Done gate', () => {
+  if (isDoneEligible({ completionGate: 'release_confirmed', deploymentStatus: 'success', deploymentEvidence: 'https://ci/deploy/123' }) !== true) {
     throw new Error('successful deployment did not satisfy Done gate');
+  }
+});
+
+// 6b. Done eligibility is gated by the active completion_gate (profile-aware).
+scenario('Done eligibility respects the completion gate', () => {
+  // release_confirmed: user confirmation OR trusted deployment both satisfy.
+  if (isDoneEligible({ completionGate: 'release_confirmed', userConfirmedRelease: true }) !== true) {
+    throw new Error('release_confirmed rejected user release confirmation');
+  }
+  if (isDoneEligible({ completionGate: 'release_confirmed' }) !== false) {
+    throw new Error('release_confirmed marked Done with no evidence');
+  }
+
+  // production_deployment (strict): user confirmation alone is NOT enough.
+  if (isDoneEligible({ completionGate: 'production_deployment', userConfirmedRelease: true }) !== false) {
+    throw new Error('strict gate bypassed by user confirmation');
+  }
+  if (isDoneEligible({ completionGate: 'production_deployment', deploymentStatus: 'success', deploymentEvidence: 'https://ci/deploy/123' }) !== true) {
+    throw new Error('strict gate rejected valid production evidence');
+  }
+  if (isDoneEligible({ completionGate: 'production_deployment', deploymentStatus: 'success' }) !== false) {
+    throw new Error('strict gate accepted deployment without evidence');
+  }
+
+  // manual: only explicit manual confirmation satisfies.
+  if (isDoneEligible({ completionGate: 'manual', manualConfirmation: true }) !== true) {
+    throw new Error('manual gate rejected manual confirmation');
+  }
+  if (isDoneEligible({ completionGate: 'manual', userConfirmedRelease: true }) !== false) {
+    throw new Error('manual gate accepted user release confirmation');
+  }
+  if (isDoneEligible({ completionGate: 'manual' }) !== false) {
+    throw new Error('manual gate marked Done with no confirmation');
   }
 });
 

@@ -1,11 +1,16 @@
 {
-  "version": "0.3.1",
+  "version": "0.4.0",
+  "bin": {
+    "linear-workflow": "./scripts/diagnose.mjs"
+  },
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "test": "node scripts/behavior.test.mjs",
     "test:profile": "node scripts/profile-behavior.test.mjs",
     "test:all": "npm run test && npm run test:profile",
-    "package": "node scripts/package.mjs",
+    "sync:forge": "node scripts/sync-forge.mjs",
+    "verify:forge": "node scripts/sync-forge.mjs --check",
+    "package": "npm run sync:forge && node scripts/package.mjs",
     "install-verify": "node scripts/install-verify.mjs",
     "ci": "npm run package && npm run install-verify && npm run test:all && npm run validate"
   },

@@ -4,7 +4,7 @@ Any agent working in this project must follow these rules.
 
 ## Linear workflow policy
 
-- For work involving a Linear issue, follow the `linear-workflow/` skill in this repository (the source of truth). The host runtime installs a copy at `.forge/skills/linear-workflow/`; edit the repository source, not the installed copy.
+- For work involving a Linear issue, follow the `linear-workflow/` skill in this repository (the source of truth). The host runtime installs a generated copy at `.forge/skills/linear-workflow/` produced by `npm run sync:forge` from `linear-workflow/`; edit the repository source, never the generated copy.
 - Never claim an issue state changed unless the Linear MCP write succeeded and a read-back verified it.
 - Do not claim or start an issue unless the user explicitly selects it and confirms the issue understanding.
 - Move an issue to a `started` state only after the planning and confirmation workflow has been completed (see `linear-workflow/SKILL.md` for Profile-specific requirements).

@@ -69,11 +69,11 @@ export function parseConfig(configPath) {
     return validateOrThrow(configPath);
   }
   if (typeof configPath !== 'string') {
-    return { profile: 'standard', overrides: {} };
+    return { version: 1, profile: 'standard', overrides: {} };
   }
   // A missing config file is allowed: default to standard.
   if (!fs.existsSync(configPath)) {
-    return { profile: 'standard', overrides: {} };
+    return { version: 1, profile: 'standard', overrides: {} };
   }
   // A present config file MUST be valid. Any malformed/invalid content fails closed.
   const content = fs.readFileSync(configPath, 'utf-8');
@@ -98,14 +98,20 @@ function validateOrThrow(config, source = 'config') {
   return config;
 }
 
+// Top-level keys allowed in a config file. Anything else is rejected so an
+// unrecognized line cannot silently become an empty object (fail closed).
+const ALLOWED_TOP_KEYS = new Set(['version', 'profile', 'overrides']);
+
 /**
  * Minimal YAML parser for linear-workflow config format.
  * Supports one level of nesting (e.g. the `overrides:` block) and inline values.
+ * Strict: any line that does not conform throws, so malformed input fails closed
+ * instead of being skipped.
  */
 export function parseSimpleYAML(content) {
   const root = {};
   let current = root;
-  let indentOf = (line) => line.length - line.replace(/^\s*/, '').length;
+  const indentOf = (line) => line.length - line.replace(/^\s*/, '').length;
 
   const lines = content.split('\n');
   for (const raw of lines) {
@@ -115,14 +121,22 @@ export function parseSimpleYAML(content) {
 
     const indent = indentOf(line);
     const colon = trimmed.indexOf(':');
-    if (colon === -1) continue;
+    if (colon === -1) {
+      throw new Error(`Invalid YAML: expected "key: value" but found line "${trimmed}"`);
+    }
 
     const key = trimmed.slice(0, colon).trim();
     let value = trimmed.slice(colon + 1).trim();
     value = value.replace(/^['"]|['"]$/g, '');
 
     if (indent === 0) {
+      if (!ALLOWED_TOP_KEYS.has(key)) {
+        throw new Error(`Invalid YAML: unknown top-level key "${key}"`);
+      }
       if (value === '') {
+        if (key !== 'overrides') {
+          throw new Error(`Invalid YAML: key "${key}" requires a value`);
+        }
         // Open a nested object (e.g. `overrides:`)
         root[key] = {};
         current = root[key];
@@ -131,6 +145,9 @@ export function parseSimpleYAML(content) {
         current = root;
       }
     } else {
+      if (current === root) {
+        throw new Error(`Invalid YAML: unexpected indentation for key "${key}"`);
+      }
       current[key] = value;
     }
   }
@@ -218,9 +235,15 @@ export function checkForbiddenCombinations(profile, merged) {
   return errors;
 }
 
+// Top-level keys allowed in a config object. Anything else is rejected.
+const ALLOWED_CONFIG_KEYS = new Set(['version', 'profile', 'overrides']);
+
 /**
  * Validate configuration against schema and invariants.
  * Pure: returns { valid, errors } and never throws.
+ * Enforces that a present config declares a supported `version` and a `profile`,
+ * and that `overrides` (when present) is an object — so an incomplete or malformed
+ * config fails closed instead of silently defaulting.
  * @param {object} config - Configuration to validate
  * @returns {object} Validation result { valid: boolean, errors: string[] }
  */
@@ -231,13 +254,40 @@ export function validateConfig(config) {
     return { valid: false, errors: ['Configuration must be an object'] };
   }
 
-  const profile = config.profile || 'standard';
-
-  if (!PROFILE_DEFAULTS[profile]) {
-    errors.push(`Invalid profile: '${profile}'. Valid profiles: ${Object.keys(PROFILE_DEFAULTS).join(', ')}`);
+  // version must be present and supported (currently 1).
+  if (config.version === undefined) {
+    errors.push('Missing required field "version" (must be 1)');
+  } else if (String(config.version) !== '1') {
+    errors.push(`Unsupported version "${config.version}" (supported: 1)`);
   }
 
-  const overrides = config.overrides || {};
+  // profile is required for a present config file (a missing file is handled
+  // separately by parseConfig, which defaults to standard).
+  if (config.profile === undefined) {
+    errors.push('Missing required field "profile"');
+  }
+
+  if (config.profile !== undefined && !PROFILE_DEFAULTS[config.profile]) {
+    errors.push(`Invalid profile: '${config.profile}'. Valid profiles: ${Object.keys(PROFILE_DEFAULTS).join(', ')}`);
+  }
+
+  // overrides, when present, must be an object (not a scalar/array).
+  if (config.overrides !== undefined) {
+    if (typeof config.overrides !== 'object' || Array.isArray(config.overrides) || config.overrides === null) {
+      errors.push('Field "overrides" must be an object');
+    }
+  }
+
+  // Reject unknown top-level keys.
+  for (const key of Object.keys(config)) {
+    if (!ALLOWED_CONFIG_KEYS.has(key)) {
+      errors.push(`Unknown top-level field "${key}"`);
+    }
+  }
+
+  const profile = config.profile || 'standard';
+  const overrides = (config.overrides && typeof config.overrides === 'object' && !Array.isArray(config.overrides)) ? config.overrides : {};
+
   for (const [key, value] of Object.entries(overrides)) {
     if (!STRATEGY_SCHEMA[key]) {
       errors.push(`Unknown strategy item: '${key}'. Valid items: ${Object.keys(STRATEGY_SCHEMA).join(', ')}`);
@@ -270,7 +320,9 @@ export function validateConfig(config) {
  * @returns {string} Diagnostic output
  */
 export function diagnose(profile = 'standard', overrides = {}) {
-  const validation = validateConfig({ profile, overrides });
+  // Build a complete, shape-valid config (version is always 1 here) so the
+  // internal validation passes even though callers pass profile + overrides.
+  const validation = validateConfig({ version: 1, profile, overrides });
 
   if (!validation.valid) {
     return `Configuration errors:\n${validation.errors.map(e => `  - ${e}`).join('\n')}`;
@@ -315,6 +367,7 @@ export function getSchema() {
     properties: {
       version: { type: 'integer', const: 1 },
       profile: { type: 'string', enum: Object.keys(PROFILE_DEFAULTS) },
+      overrides: { type: 'object' },
       overrides: {
         type: 'object',
         properties: Object.fromEntries(

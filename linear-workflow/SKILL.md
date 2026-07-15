@@ -149,6 +149,6 @@ Action: Provide deployment evidence (logs, health check, etc.) or change complet
 
 ---
 
-**Version**: 0.3.1  
+**Version**: 0.4.0  
 **Last Updated**: 2026-07-15  
 **Profile Support**: minimal, standard, strict
