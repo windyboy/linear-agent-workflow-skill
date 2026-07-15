@@ -3,7 +3,8 @@
     "validate": "node scripts/validate.mjs",
     "test": "node scripts/behavior.test.mjs",
     "package": "node scripts/package.mjs",
-    "ci": "npm run package && npm run validate"
+    "install-verify": "node scripts/install-verify.mjs",
+    "ci": "npm run package && npm run install-verify && npm run validate"
   },
   "dependencies": {
     "gitnexus": "^1.6.9"

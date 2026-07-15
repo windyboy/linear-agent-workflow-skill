@@ -1,0 +1,38 @@
+{
+  "version": "unknown",
+  "timestamp": "2026-07-15T07:04:01.928Z",
+  "sourceHash": "63fdf383df19b85a",
+  "artifactPath": "/home/ubuntu/linear-agent-workflow-skill/dist/linear-workflow.skill",
+  "metadataPath": "/home/ubuntu/linear-agent-workflow-skill/dist/linear-workflow.metadata.json",
+  "profiles": [
+    "minimal",
+    "standard",
+    "strict"
+  ],
+  "invariants": 5,
+  "templates": [
+    "templates/idea-feature.md",
+    "templates/bug-report.md",
+    "templates/refactor.md",
+    "templates/change-review.md",
+    "templates/release-review.md",
+    "templates/finding.md"
+  ],
+  "referenceFiles": [
+    "references/invariants.md",
+    "references/configuration-schema.md",
+    "references/capability-discovery.md",
+    "references/issue-discovery.md",
+    "references/start-implementation.md",
+    "references/move-to-review.md",
+    "references/output-contracts.md",
+    "references/project-scope.md",
+    "references/resume-work.md",
+    "references/review-gate-policy.md"
+  ],
+  "parity": {
+    "sourceHash": "63fdf383df19b85a",
+    "status": "in_parity",
+    "lastVerified": "2026-07-15T07:04:01.928Z"
+  }
+}

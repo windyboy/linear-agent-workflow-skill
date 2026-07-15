@@ -1,0 +1,150 @@
+# Changelog
+
+All notable changes to Linear Workflow are documented in this file.
+
+## [0.3.0] - 2026-07-15
+
+### Added
+
+#### Profiles
+- **minimal** profile for personal projects and rapid prototyping
+- **standard** profile for small teams (3–5 people)
+- **strict** profile for enterprise, multi-team, and regulated projects
+- Configuration file support (`linear-workflow.config.yaml`)
+- Profile-specific strategy items (plan_confirmation, review_gate, completion_gate, audit_comments, project_check, release_reconciliation, output_verbosity)
+
+#### Core Documentation
+- [references/invariants.md](linear-workflow/references/invariants.md) — Five non-negotiable rules that apply to all profiles
+- [references/configuration-schema.md](linear-workflow/references/configuration-schema.md) — Complete configuration schema, valid values, and constraints
+- [configuration.md](linear-workflow/configuration.md) — Configuration guide with examples and troubleshooting
+- [MIGRATION.md](MIGRATION.md) — Migration guide from v0.2.0 to v0.3.0
+
+#### Examples
+- [examples/minimal-project.md](linear-workflow/examples/minimal-project.md) — Minimal profile workflow example
+- [examples/standard-team.md](linear-workflow/examples/standard-team.md) — Standard profile workflow example
+- [examples/strict-enterprise.md](linear-workflow/examples/strict-enterprise.md) — Strict profile workflow example
+- [examples/README.md](linear-workflow/examples/README.md) — Profile selection guide
+
+#### Packaging and Verification
+- Enhanced `scripts/package.mjs` with version metadata injection and source hash generation
+- New `scripts/install-verify.mjs` for verifying source → dist → runtime parity
+- New `npm run install-verify` command for CI verification
+- Updated CI pipeline: `npm run ci` now runs package → install-verify → validate
+
+#### Templates
+- Reorganized templates from `references/templates/` to `templates/`
+- Updated [templates/README.md](linear-workflow/templates/README.md) with new template system documentation
+- Clarified template usage: creation templates (Feature/Idea, Bug, Refactor) vs output templates (Change Review, Release Review)
+
+### Changed
+
+#### Documentation
+- Simplified [SKILL.md](linear-workflow/SKILL.md) from ~70 lines to ~180 lines with clearer structure
+- Reorganized reference files with clearer loading guidance
+- Updated all references to reflect new directory structure
+
+#### Workflow
+- Unified lifecycle across all profiles: discover → plan → started → review → release → completed
+- Replaced multiple confirmation gates with configurable strategy items
+- Introduced risk-based plan confirmation for standard profile
+- Made audit comments configurable (none / summary / detailed)
+
+#### Configuration
+- Introduced configuration priority: Invariants > User Instruction > Project Override > Profile Default > System Default
+- Added forbidden combination detection to prevent invalid configurations
+- Added diagnostic command: `linear-workflow config diagnose`
+
+### Fixed
+
+- Fixed invalid state-type literal `tried` (should be `triage`) — now enforced at configuration load time
+- Fixed broken workflow source path in `.forge/skills/` — now auto-generated from source
+- Fixed template system documentation that referenced old directory structure
+
+### Deprecated
+
+- v0.2.0 one-size-fits-all workflow model (replaced by profiles)
+- Manual release coordination (now automatic in strict profile)
+
+### Removed
+
+- Removed `.forge/skills/` manual copy (now auto-generated during packaging)
+- Removed redundant issue-discovery.md, start-implementation.md references (content moved to examples)
+
+### Security
+
+- Strengthened five non-negotiable Invariants that apply to all profiles
+- Added configuration schema validation to prevent unsafe combinations
+- Enhanced source → dist → runtime verification to detect tampering or drift
+
+### Performance
+
+- Reduced core SKILL.md complexity by deferring advanced topics to references
+- Introduced lazy loading for reference files (only load when relevant)
+- Optimized template routing logic
+
+## [0.2.0] - 2026-07-14
+
+### Added
+
+- Configurable Review trigger via `review-gate-policy.md`
+- Resume work capability for interrupted sessions
+- Comprehensive state machine documentation
+- Five-template system (Idea/Feature, Bug Report, Refactor, Change Review, Release Review)
+- Automated validation and behavior scenarios
+
+### Changed
+
+- Refactored linear-workflow into compact state-machine router
+- Improved output contracts and error handling
+
+### Fixed
+
+- Fixed invalid state-type literal `tried` → `triage`
+- Fixed broken workflow source path in `.forge/skills/`
+
+## [0.1.0] - 2026-07-13
+
+### Added
+
+- Initial release of Linear Workflow
+- Basic issue lifecycle management (discover → plan → started → review → release → completed)
+- Five non-negotiable safety rules
+- Template system for issue creation
+- Comprehensive reference documentation
+
+---
+
+## Upgrade Guide
+
+### From v0.2.0 to v0.3.0
+
+v0.3.0 is backward compatible with v0.2.0. To upgrade:
+
+1. Create `linear-workflow.config.yaml` with `profile: strict` to preserve v0.2.0 behavior
+2. (Optional) Choose a different profile (minimal or standard) for faster workflows
+3. (Optional) Fine-tune with overrides for specific strategy items
+
+See [MIGRATION.md](MIGRATION.md) for detailed upgrade instructions.
+
+### From v0.1.0 to v0.2.0
+
+v0.2.0 introduced configurable Review trigger. To upgrade:
+
+1. Update any custom Review gate policies
+2. Test resume work capability with interrupted sessions
+
+---
+
+## Versioning
+
+Linear Workflow follows [Semantic Versioning](https://semver.org/):
+
+- **MAJOR**: Breaking changes to core workflow or Invariants
+- **MINOR**: New profiles, strategy items, or features
+- **PATCH**: Bug fixes, documentation updates, or internal improvements
+
+---
+
+**Current Version**: 0.3.0  
+**Release Date**: 2026-07-15  
+**Status**: Stable
