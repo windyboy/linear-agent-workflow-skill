@@ -1,4 +1,5 @@
 {
+  "version": "0.3.0",
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "test": "node scripts/behavior.test.mjs",
