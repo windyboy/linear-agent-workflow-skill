@@ -1,61 +1,99 @@
 ---
 name: linear-workflow
-description: Manage the end-to-end delivery lifecycle of Linear issues. Use when the user mentions Linear, an issue identifier (e.g. ABC-123), unfinished requirements or bugs, creating issues, starting/picking up work, implementation plans, branching, PRs, verification, moving to Review, releasing/deploying, or closing issues. Only for Linear issue lifecycle; executes queries, started, Review, and post-release completed safely via the current runtime's Linear integration.
+description: Manage the end-to-end delivery lifecycle of Linear issues with configurable workflow profiles. Use when the user mentions Linear, an issue identifier (e.g. ABC-123), unfinished requirements or bugs, creating issues, starting/picking up work, implementation plans, branching, PRs, verification, moving to Review, releasing/deploying, or closing issues. Supports minimal (personal projects), standard (small teams), and strict (enterprise) profiles.
 ---
 
 # Linear Workflow
 
-Host-agnostic: uses the **Linear integration** provided by the current Agent runtime (Linear MCP, API, connector, or equivalent tool provider). Tool names are illustrative; actual names are determined by the current environment.
+Manage Linear issues through a unified lifecycle with configurable safety levels. The Skill uses the **Linear integration** provided by the current Agent runtime (Linear MCP, API, connector, or equivalent).
 
-## Non-Negotiable Rules
+## Five Non-Negotiable Invariants
 
-1. **Read before write** — re-read issue before any status change
-2. **Verify after write** — confirm status with read-back
-3. **Merge ≠ Done** — only production release = Done
-4. **Project scope** — current project only unless user explicitly says otherwise
-5. **No skipping without evidence** — every stage requires corresponding evidence
+These rules apply to **all Profiles** and cannot be overridden:
 
-## Lifecycle
+1. **Read-Before-Write** — Re-read the issue before any status change to prevent lost updates
+2. **Write-Back Verification** — Confirm every write succeeded by reading back the new state
+3. **Authorization** — Require explicit user authorization before creating or modifying issues
+4. **Team/Project Boundary** — Respect team and project scope; escalate cross-boundary writes
+5. **Reality Check** — Report completion only with evidence matching the configured `completion_gate`
+
+See [references/invariants.md](references/invariants.md) for detailed definitions and test cases.
+
+## Unified Lifecycle
+
+All Profiles share the same state machine:
 
 ```text
-Need → Confirm → Create/Select Issue → Read → Inspect Code → Plan → Confirm Start
-→ Update to Started + Branch → Implement → Run Tests → Commit → Push → PR
-→ CI → Request Acceptance → Move to Review → Human Review → Merge → Deploy → Done
+discover → plan → started → review → release → completed
 ```
 
-## State Machine
+**State Types** (Linear API): `backlog` → `unstarted` → `started` → `completed` → `canceled`
 
-**State types** (Linear API): `backlog` → `unstarted` → `started` → `completed` → `canceled`
+**Canonical Identifier**: Use boundary-safe regex `\b[A-Z0-9]{1,5}-\d+\b` to extract issue IDs.
 
-Special types: `duplicate` (auto-managed), `triage` (optional inbox). Multiple states can share a type.
+## Profiles
 
-**Canonical identifier extraction**: use boundary-safe regex `\b[A-Z0-9]{1,5}-\d+\b` (extracted via boundary-safe regex to avoid partial matches like `ABC-12` matching `ABC-123`).
+Linear Workflow offers three profiles that adjust confirmation frequency, audit detail, and automation level while preserving the unified lifecycle:
 
-**State discovery**: Get issue → identify team → get team's workflow states → map by **type** not name.
+| Profile | Use Case | Key Traits |
+|---|---|---|
+| **minimal** | Personal projects, 1–2 people | Implicit plan confirmation, PR-ready review gate, no audit comments |
+| **standard** | Small teams (3–5 people) | Risk-based plan confirmation, PR-ready review gate, summary audit comments |
+| **strict** | Enterprise, multi-team, regulated | Explicit plan confirmation, user acceptance review gate, detailed audit comments |
 
-## Transition Table
+See [references/configuration-schema.md](references/configuration-schema.md) for complete profile definitions and configuration.
 
-| Current State | Allowed Actions | Evidence Required |
-|---------------|-----------------|-------------------|
-| `backlog` / `unstarted` | Start work → `started` | User confirms start |
-| `started` (implementation) | Move to review → `started` (review) | User says "verified" |
-| `started` (review) | Mark done → `completed` | Production release confirmed |
-| `completed` / `canceled` | None (unless explicit reopen) | — |
+## Quick Start
 
-## Safety Escalations
+### 1. Discover or Create an Issue
 
-- **Ambiguous state mapping** → ask user which state to use
-- **Cross-project writes** → require explicit user confirmation
-- **Missing capabilities** → report limitation, do not simulate
-- **Timeout** → re-read before retry
-- **Already in target state** → skip, do not re-write
+**User**: "Create a feature to add dark mode"  
+**Agent**: Reads user request, asks clarifying questions if needed, creates issue with template, returns issue ID.
+
+### 2. Start Work
+
+**User**: "Start work on ABC-123"  
+**Agent**: Reads issue, forms implementation plan, confirms (based on profile), creates branch, updates issue to `started`.
+
+### 3. Implement and Push
+
+**User**: "I've pushed the changes"  
+**Agent**: Verifies PR is created and CI passes, moves issue to `review` (based on review_gate).
+
+### 4. Mark Done
+
+**User**: "Mark ABC-123 as done"  
+**Agent**: Verifies completion evidence (based on completion_gate), moves issue to `completed`.
+
+### Configuration
+
+Create `linear-workflow.config.yaml` in your project:
+
+```yaml
+version: 1
+profile: standard
+```
+
+To override specific strategy items:
+
+```yaml
+version: 1
+profile: minimal
+overrides:
+  review_gate: user_acceptance
+  audit_comments: summary
+```
+
+Run `linear-workflow config diagnose` to see the effective configuration.
 
 ## Reference Files
 
 Load only when relevant to the current phase:
 
 | File | When to Load |
-|------|--------------|
+|---|---|
+| [references/invariants.md](references/invariants.md) | Understanding the five non-negotiable rules |
+| [references/configuration-schema.md](references/configuration-schema.md) | Configuring profiles and strategy items |
 | [references/capability-discovery.md](references/capability-discovery.md) | First Linear operation in session |
 | [references/issue-discovery.md](references/issue-discovery.md) | Browsing, creating, or querying issues |
 | [references/start-implementation.md](references/start-implementation.md) | Reading issue, planning, branching, implementing |
@@ -63,6 +101,54 @@ Load only when relevant to the current phase:
 | [references/output-contracts.md](references/output-contracts.md) | Error handling, idempotency, audit format |
 | [references/project-scope.md](references/project-scope.md) | Scope boundary decisions |
 | [references/resume-work.md](references/resume-work.md) | Resuming interrupted work |
-| [references/review-gate-policy.md](references/review-gate-policy.md) | Configuring Review trigger |
-| [references/template-system.md](references/template-system.md) | Creating issues from templates |
 | [mark-done.md](mark-done.md) | Marking issues Done (independently callable) |
+| [templates/](templates/) | Issue creation templates |
+
+## Transition Table
+
+| Current State | Allowed Actions | Evidence Required |
+|---|---|---|
+| `backlog` / `unstarted` | Start work → `started` | User confirms start (implicit or explicit per profile) |
+| `started` (implementation) | Move to review → `started` (review) | User says "verified" or PR ready (per review_gate) |
+| `started` (review) | Mark done → `completed` | Completion evidence per configured completion_gate |
+| `completed` / `canceled` | None (unless explicit reopen) | — |
+
+## Safety Escalations
+
+- **Ambiguous state mapping** → Ask user which state to use
+- **Cross-project writes** → Require explicit user confirmation (per project_check)
+- **Missing capabilities** → Report limitation, do not simulate
+- **Timeout** → Re-read before retry
+- **Already in target state** → Skip, do not re-write
+- **Invariant violation** → Report which invariant and why, do not proceed
+
+## Supported Operations
+
+- **Create Issue**: From user request or template
+- **Read Issue**: Get current state, metadata, linked issues
+- **Start Work**: Create branch, update to `started`
+- **Move to Review**: Update to `review` (per review_gate)
+- **Mark Done**: Update to `completed` (per completion_gate)
+- **Resume Work**: Detect and recover interrupted work (branch, PR, CI state)
+- **Release Coordination**: Automatically close related issues (per release_reconciliation)
+
+## Error Handling
+
+All errors are reported with:
+1. **What happened**: Clear description of the error
+2. **Why it happened**: Root cause or constraint violated
+3. **What to do**: Suggested next steps
+
+Example:
+
+```
+Error: Cannot mark ABC-123 as done
+Reason: completion_gate is "production_deployment" but no deployment evidence found
+Action: Provide deployment evidence (logs, health check, etc.) or change completion_gate
+```
+
+---
+
+**Version**: 0.3.0  
+**Last Updated**: 2026-07-15  
+**Profile Support**: minimal, standard, strict

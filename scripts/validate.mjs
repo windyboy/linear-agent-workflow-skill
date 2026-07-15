@@ -48,8 +48,16 @@ group('Skill frontmatter and conventions');
   }
   if (!existsSync(join(skillDir, 'mark-done.md'))) fail('linear-workflow/mark-done.md missing');
   else ok('linear-workflow/mark-done.md present');
-  if (!existsSync(join(skillDir, 'references', 'templates'))) fail('references/templates missing');
-  else ok('references/templates present');
+  if (!existsSync(join(skillDir, 'templates'))) fail('templates missing');
+  else ok('templates present');
+  if (!existsSync(join(skillDir, 'templates', 'README.md'))) fail('templates/README.md missing');
+  else ok('templates/README.md present');
+  if (!existsSync(join(skillDir, 'configuration.md'))) fail('configuration.md missing');
+  else ok('configuration.md present');
+  if (!existsSync(join(skillDir, 'references', 'invariants.md'))) fail('references/invariants.md missing');
+  else ok('references/invariants.md present');
+  if (!existsSync(join(skillDir, 'references', 'configuration-schema.md'))) fail('references/configuration-schema.md missing');
+  else ok('references/configuration-schema.md present');
 }
 
 // --- 2. Relative Markdown links --------------------------------------------
