@@ -13,7 +13,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-      - name: Build dist artifact
-        run: npm run package
-      - name: Run validation and behavior scenarios
-        run: npm run validate
+      - name: Install dependencies
+        run: npm install
+      - name: Run full CI pipeline (package → install-verify → test:all → validate)
+        run: npm run ci

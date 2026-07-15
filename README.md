@@ -62,8 +62,8 @@ The point at which an issue moves to Review is configurable via the **Review Gat
 
 | Policy | Review trigger | Typical flow |
 | --- | --- | --- |
-| `user_acceptance` (default) | User explicitly accepts the change | CI → User acceptance → Review → Merge |
-| `pr_ready` | PR created and CI passes | CI → Review (acceptance during review) → Merge |
+| `pr_ready` (default for `standard`) | PR created and CI passes | CI → Review (acceptance during review) → Merge |
+| `user_acceptance` | User explicitly accepts the change | CI → User acceptance → Review → Merge |
 
 Configure via repository instructions (`AGENTS.md`, `CLAUDE.md`), team/project conventions, or explicit user selection. The **Completion Gate** is determined by the active Profile: `release_confirmed` for minimal/standard, `production_deployment` for strict. See `linear-workflow/configuration.md` for customization.
 
@@ -79,7 +79,7 @@ When resuming interrupted work, the skill detects the current state from evidenc
 - Separates four stages for completion: discovery → proposed candidate list → user/trusted-caller authorization → state mutation. Candidate selection never implies write authorization.
 - Requires explicit confirmation for both explicit issue IDs and automatically inferred IDs before any `completed` write.
 - Reads back every state change before reporting success.
-- Requires explicit user confirmation before creating an issue, starting implementation, and moving to Review.
+- Requires confirmation before creating an issue. The level of confirmation before **starting implementation** and **moving to Review** is Profile-dependent: `minimal` uses implicit/PR-ready, `standard` uses risk-based/PR-ready, `strict` uses explicit/user-acceptance (see `linear-workflow/configuration.md`).
 - Requires release/deployment evidence before Done.
 - Supports explicit issue IDs, release-range matching, weak-evidence confirmation, retries, idempotency, and partial-failure reporting.
 
@@ -100,7 +100,7 @@ The skill ships a small, reusable template system for creating well-structured L
 - **Release Review** — packaging and release-readiness verification.
 - **Finding** (shared, not a sixth top-level template) — used inside Change Review findings.
 
-Select one template per request using the routing table in `linear-workflow/references/templates/README.md`. The skill uses the selected template when drafting or creating an issue; this never bypasses the required user-confirmation gate before creation. Optional fields are left blank or marked `unknown` rather than fabricated.
+Select one template per request using the routing table in `linear-workflow/templates/README.md`. The skill uses the selected template when drafting or creating an issue; this never bypasses the required user-confirmation gate before creation. Optional fields are left blank or marked `unknown` rather than fabricated.
 
 ## Done workflow integration
 
@@ -115,8 +115,8 @@ The skill ships with lightweight, dependency-free validation so defects (invalid
 | `npm run validate` | Run all static checks (frontmatter, name/dir conventions, relative links, referenced repo paths, state-type literals, canonical identifier policy, dist parity/staleness) **and** the deterministic behavior scenarios. Exits non-zero on any failure. |
 | `npm run test` | Run only the behavior scenario tests. |
 | `npm run package` | Rebuild `dist/linear-workflow.skill` from `linear-workflow/` so the bundle stays in parity with the source. |
-| `npm run ci` | `npm run package` then `npm run validate` (used by CI). |
+| `npm run ci` | `npm run package` → `npm run install-verify` → `npm run test:all` → `npm run validate` (used by CI). |
 
 `npm run validate` is the single local command for validation. It requires no Linear workspace and performs no writes. A deliberately stale bundle or a broken link causes a non-zero exit.
 
-GitHub Actions runs `npm run package && npm run validate` for every pull request and on the default branch (see `.github/workflows/validate.yml`).
+GitHub Actions runs `npm run ci` (package → install-verify → test:all → validate) for every pull request and on the default branch (see `.github/workflows/validate.yml`).

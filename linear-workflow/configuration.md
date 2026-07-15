@@ -313,17 +313,17 @@ profile: strict
 
 Comprehensive confirmations, detailed audit trail, automatic coordination.
 
-### Personal Project with Production Deployment Verification
+### Small Team with Production Deployment Verification
 
 ```yaml
 version: 1
-profile: minimal
+profile: standard
 overrides:
   completion_gate: production_deployment
   audit_comments: summary
 ```
 
-Fast iteration but require production deployment evidence before marking done.
+Standard profile (risk-based planning, PR-ready review) but require production deployment evidence before marking done. (Note: `minimal` cannot use `production_deployment` — see Forbidden Combinations.)
 
 ### Small Team with Explicit Planning
 

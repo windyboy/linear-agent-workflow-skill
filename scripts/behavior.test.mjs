@@ -36,13 +36,42 @@ scenario('Inspect ABC-123 performs no write', () => {
   }
 });
 
-// 2. Starting work without a confirmed plan does not move to started.
+// 2. Starting work without a confirmed plan does not move to started (high-risk standard).
 scenario('Starting work without a confirmed plan does not move to started', () => {
-  if (shouldMoveToStarted({ planConfirmed: false }) !== false) {
-    throw new Error('moved to started without a confirmed plan');
+  // standard + high risk without confirmation => blocked
+  if (shouldMoveToStarted({ planConfirmed: false, profile: 'standard', riskLevel: 'high' }) !== false) {
+    throw new Error('high-risk standard change moved to started without confirmation');
   }
-  if (shouldMoveToStarted({ planConfirmed: true }) !== true) {
-    throw new Error('did not move to started after plan confirmation');
+  // standard + high risk with confirmation => allowed
+  if (shouldMoveToStarted({ planConfirmed: true, profile: 'standard', riskLevel: 'high' }) !== true) {
+    throw new Error('high-risk standard change blocked after confirmation');
+  }
+  // standard + low risk auto-starts (risk-based)
+  if (shouldMoveToStarted({ planConfirmed: false, profile: 'standard', riskLevel: 'low' }) !== true) {
+    throw new Error('low-risk standard change required confirmation');
+  }
+});
+
+// 2b. Standard (risk_based) auto-starts low/medium risk but escalates high risk.
+scenario('Standard profile is risk-based, not always explicit', () => {
+  if (shouldMoveToStarted({ profile: 'standard', riskLevel: 'low' }) !== true) {
+    throw new Error('low-risk standard change required confirmation');
+  }
+  if (shouldMoveToStarted({ profile: 'standard', riskLevel: 'medium' }) !== true) {
+    throw new Error('medium-risk standard change required confirmation');
+  }
+  if (shouldMoveToStarted({ profile: 'standard', riskLevel: 'high' }) !== false) {
+    throw new Error('high-risk standard change auto-started without confirmation');
+  }
+  if (shouldMoveToStarted({ profile: 'standard', riskLevel: 'high', planConfirmed: true }) !== true) {
+    throw new Error('high-risk standard change blocked after confirmation');
+  }
+  // minimal stays implicit, strict stays explicit regardless of risk.
+  if (shouldMoveToStarted({ profile: 'minimal', riskLevel: 'high' }) !== true) {
+    throw new Error('minimal did not allow implicit start');
+  }
+  if (shouldMoveToStarted({ profile: 'strict', riskLevel: 'low', planConfirmed: false }) !== false) {
+    throw new Error('strict auto-started without confirmation');
   }
 });
 

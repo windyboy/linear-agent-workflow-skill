@@ -11,8 +11,9 @@
 // - Verifies source → dist → runtime parity
 // - Detects and reports drift between versions
 
-import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { execSync } from 'node:child_process';
+import { tmpdir } from 'node:os';
 import { join, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
@@ -107,13 +108,19 @@ console.log('✓ Generated metadata ' + metadataFile);
 // Step 9: Embed metadata into .skill artifact
 console.log('\nEmbedding metadata into artifact...');
 const metadataContent = JSON.stringify(metadata, null, 2);
+const tmpMeta = mkdtempSync(join(tmpdir(), 'lw-meta-'));
+const metaTmp = join(tmpMeta, 'metadata.json');
+writeFileSync(metaTmp, metadataContent);
 try {
-  // Add metadata.json to the zip file
-  execSync(`echo '${metadataContent.replace(/'/g, "'\\''")}' | zip -q "${out}" -`, { stdio: 'pipe' });
+  // Add metadata.json as a top-level entry in the zip (must be present, not optional).
+  execSync(`zip -q "${out}" metadata.json`, { cwd: tmpMeta, stdio: 'pipe' });
   console.log('✓ Embedded metadata.json into artifact');
 } catch (e) {
-  console.warn('warning: could not embed metadata into artifact, continuing...');
+  rmSync(tmpMeta, { recursive: true, force: true });
+  console.error('✗ Failed to embed metadata.json into artifact: ' + e.message);
+  process.exit(1);
 }
+rmSync(tmpMeta, { recursive: true, force: true });
 
 // Step 10: Verify parity
 console.log('\nVerifying source → dist parity...');

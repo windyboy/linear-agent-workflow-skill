@@ -118,16 +118,24 @@ export function isWriteIntent(text = '') {
 export const REQUIRES_READBACK_AFTER_TIMEOUT = true;
 
 // Scenario 2: starting work without a confirmed plan must not move to started.
-// This is Profile-aware: minimal uses implicit, standard uses risk-based, strict uses explicit.
+// Profile-aware:
+//   minimal  -> implicit (always allowed once user intent is clear)
+//   standard -> risk_based: low/medium risk auto-starts; high risk escalates to explicit confirmation
+//   strict   -> explicit (always requires confirmed plan)
 export function shouldMoveToStarted({ planConfirmed = false, profile = 'standard', riskLevel = 'low' } = {}) {
-  // Scenario 2: Starting work without a confirmed plan does not move to started.
-  // This is Profile-aware: minimal uses implicit, standard/strict use explicit.
   if (profile === 'minimal') {
-    // Minimal: implicit confirmation if user intent is clear
     return true;
   }
-  // Standard and strict: require explicit plan confirmation
-  return planConfirmed === true;
+  if (profile === 'strict') {
+    return planConfirmed === true;
+  }
+  // standard: risk_based
+  if (riskLevel === 'high') {
+    // High-risk change (DB migration, API change, auth, payments): escalate to explicit confirmation.
+    return planConfirmed === true;
+  }
+  // low / medium / unknown risk: proceed without blocking confirmation.
+  return true;
 }
 
 // Scenario 7: partial success reporting when state and comment diverge.
