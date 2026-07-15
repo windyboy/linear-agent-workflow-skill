@@ -1,7 +1,7 @@
 {
   "version": "0.3.1",
-  "timestamp": "2026-07-15T08:11:33.924Z",
-  "sourceCommit": "2072121d60920f1c4463a5320c61cf4440c28c5e",
+  "timestamp": "2026-07-15T08:20:07.404Z",
+  "sourceCommit": "6c923261035df5927edea37272ac5dd3c532b0fa",
   "sourceHash": "d8b0c90e42d62f13",
   "artifactPath": "/Users/windy/Projects/ai/linear-skill/dist/linear-workflow.skill",
   "metadataPath": "/Users/windy/Projects/ai/linear-skill/dist/linear-workflow.metadata.json",
@@ -34,6 +34,6 @@
   "parity": {
     "sourceHash": "d8b0c90e42d62f13",
     "status": "in_parity",
-    "lastVerified": "2026-07-15T08:11:33.925Z"
+    "lastVerified": "2026-07-15T08:20:07.405Z"
   }
 }
