@@ -10,7 +10,7 @@
 // documented regex literal matches IDENTIFIER_PATTERN, preventing the
 // "regex divergence" defect called out in W1N-17.
 
-import { PROFILE_DEFAULTS } from './profile-parser.mjs';
+import { mergeConfig } from './profile-parser.mjs';
 
 // Canonical identifier extraction/validation pattern. Boundary-safe: a 1-5 char
 // uppercase alphanumeric team key, a hyphen, then digits. Mirrors SKILL.md
@@ -47,15 +47,12 @@ export function isValidStateType(t) {
 }
 
 // The Completion Gate is determined by the active Profile.
-// This function returns the gate based on profile and strategy overrides.
-// Single source of truth for profile defaults lives in profile-parser.mjs
-// (PROFILE_DEFAULTS); resolve the completion gate from there rather than
-// maintaining a second copy that can drift.
+// Delegate to mergeConfig (profile-parser.mjs) so an invalid profile or an
+// illegal override fails closed (throws) instead of silently downgrading to the
+// standard profile's gate — keeping this entrance consistent with the parser's
+// own safety checks.
 export function getCompletionGate(profile = 'standard', overrides = {}) {
-  // Explicit override takes precedence
-  if (overrides.completion_gate) return overrides.completion_gate;
-  const defaults = PROFILE_DEFAULTS[profile] || PROFILE_DEFAULTS.standard;
-  return defaults.completion_gate;
+  return mergeConfig(profile, overrides).completion_gate;
 }
 
 // Backward compatibility: export the strict default

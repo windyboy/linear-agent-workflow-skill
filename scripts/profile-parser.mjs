@@ -358,27 +358,145 @@ export function getCompletionGate(profile = 'standard', overrides = {}) {
 }
 
 /**
- * Export effective configuration as JSON Schema.
+ * Export the effective configuration as a complete JSON Schema (draft-07).
+ *
+ * This is the single source of truth for the configuration shape. The markdown
+ * block in `linear-workflow/references/configuration-schema.md` is generated
+ * from this function by `scripts/generate-schema.mjs` and verified byte-for-byte
+ * by `scripts/validate.mjs`, so the two can never drift into a third copy.
+ *
+ * The `allOf` forbidden-combination constraints mirror `checkForbiddenCombinations`
+ * (the runtime enforcement) so external tools that consume this schema reject the
+ * same combinations the parser rejects.
  */
 export function getSchema() {
-  return {
-    version: 1,
+  const overrides = {
     type: 'object',
-    properties: {
-      version: { type: 'integer', const: 1 },
-      profile: { type: 'string', enum: Object.keys(PROFILE_DEFAULTS) },
-      overrides: {
-        type: 'object',
-        properties: Object.fromEntries(
-          Object.entries(STRATEGY_SCHEMA).map(([key, values]) => [
-            key,
-            { type: 'string', enum: values },
-          ])
-        ),
-      },
-    },
-    // Both version and profile are required by validateConfig for a present
-    // config file, so the schema must declare both.
+    description: 'Override specific strategy items',
+    additionalProperties: false,
+    properties: Object.fromEntries(
+      Object.entries(STRATEGY_SCHEMA).map(([key, values]) => [
+        key,
+        { type: 'string', enum: values },
+      ])
+    ),
+  };
+  return {
+    $schema: 'http://json-schema.org/draft-07/schema#',
+    title: 'Linear Workflow Configuration',
+    type: 'object',
+    additionalProperties: false,
     required: ['version', 'profile'],
+    properties: {
+      version: {
+        type: 'integer',
+        const: 1,
+        description: 'Configuration schema version',
+      },
+      profile: {
+        type: 'string',
+        enum: Object.keys(PROFILE_DEFAULTS),
+        default: 'standard',
+        description: 'Preset profile name',
+      },
+      overrides,
+    },
+    allOf: [
+      {
+        if: { properties: { profile: { const: 'minimal' } }, required: ['profile'] },
+        then: {
+          not: {
+            required: ['overrides'],
+            properties: {
+              overrides: {
+                properties: { completion_gate: { enum: ['production_deployment'] } },
+              },
+            },
+          },
+        },
+        description: 'minimal profile cannot override completion_gate to production_deployment',
+      },
+      {
+        if: { properties: { profile: { const: 'minimal' } }, required: ['profile'] },
+        then: {
+          not: {
+            properties: {
+              overrides: {
+                properties: { audit_comments: { enum: ['detailed'] } },
+              },
+            },
+          },
+        },
+        description: 'minimal profile cannot override audit_comments to detailed',
+      },
+      {
+        if: { properties: { profile: { const: 'minimal' } }, required: ['profile'] },
+        then: {
+          not: {
+            properties: {
+              overrides: {
+                properties: { release_reconciliation: { enum: ['enabled'] } },
+              },
+            },
+          },
+        },
+        description: 'minimal profile cannot override release_reconciliation to enabled',
+      },
+      {
+        not: {
+          properties: {
+            overrides: {
+              properties: { completion_gate: { enum: ['merge'] } },
+            },
+          },
+        },
+        description: "completion_gate 'merge' violates Reality Check (Invariant 5)",
+      },
+      {
+        if: {
+          properties: {
+            overrides: {
+              properties: { completion_gate: { const: 'production_deployment' } },
+            },
+          },
+        },
+        then: {
+          not: {
+            properties: {
+              overrides: {
+                properties: { plan_confirmation: { enum: ['implicit'] } },
+              },
+            },
+          },
+        },
+        description: 'production_deployment requires explicit/risk_based planning, never implicit',
+      },
+      {
+        if: {
+          allOf: [
+            {
+              properties: {
+                overrides: { properties: { review_gate: { const: 'pr_ready' } } },
+              },
+            },
+            {
+              properties: {
+                overrides: { properties: { completion_gate: { const: 'production_deployment' } } },
+              },
+            },
+          ],
+        },
+        then: {
+          not: {
+            properties: {
+              overrides: {
+                properties: { audit_comments: { enum: ['none'] } },
+              },
+            },
+          },
+        },
+        description: 'pr_ready + production_deployment requires audit summary/detailed',
+      },
+    ],
   };
 }

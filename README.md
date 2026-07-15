@@ -35,7 +35,7 @@ linear-workflow/
     └── review-gate-policy.md       # Configurable Review trigger
 ```
 
-The packaged artifact is available at `dist/linear-workflow.skill`.
+The packaged artifact (`dist/linear-workflow.skill`) is generated locally/CI by `npm run package` and is **not** committed to the repository.
 
 ## Workflow
 
@@ -114,7 +114,7 @@ The skill ships with lightweight, dependency-free validation so defects (invalid
 | --- | --- |
 | `npm run validate` | Run all static checks (frontmatter, name/dir conventions, relative links, referenced repo paths, state-type literals, canonical identifier policy, dist parity/staleness) **and** the deterministic behavior scenarios. Exits non-zero on any failure. |
 | `npm run test` | Run only the behavior scenario tests. |
-| `npm run package` | Rebuild `dist/linear-workflow.skill` from `linear-workflow/` so the bundle stays in parity with the source. |
+| `npm run package` | Rebuild `dist/linear-workflow.skill` (generated, gitignored) from `linear-workflow/` so the bundle stays in parity with the source. |
 | `npm run ci` | `npm run package` → `npm run install-verify` → `npm run test:all` → `npm run validate` (used by CI). |
 
 `npm run validate` is the single local command for validation. It requires no Linear workspace and performs no writes. A deliberately stale bundle or a broken link causes a non-zero exit.

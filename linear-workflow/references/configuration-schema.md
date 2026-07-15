@@ -19,12 +19,18 @@ overrides:
 
 ### Schema Definition
 
+<!-- SCHEMA:START -->
+
 ```json
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "title": "Linear Workflow Configuration",
   "type": "object",
-  "required": ["version", "profile"],
+  "additionalProperties": false,
+  "required": [
+    "version",
+    "profile"
+  ],
   "properties": {
     "version": {
       "type": "integer",
@@ -33,68 +39,259 @@ overrides:
     },
     "profile": {
       "type": "string",
-      "enum": ["minimal", "standard", "strict"],
+      "enum": [
+        "minimal",
+        "standard",
+        "strict"
+      ],
       "default": "standard",
       "description": "Preset profile name"
     },
     "overrides": {
       "type": "object",
       "description": "Override specific strategy items",
+      "additionalProperties": false,
       "properties": {
         "plan_confirmation": {
           "type": "string",
-          "enum": ["implicit", "risk_based", "explicit"]
+          "enum": [
+            "implicit",
+            "risk_based",
+            "explicit"
+          ]
         },
         "review_gate": {
           "type": "string",
-          "enum": ["pr_ready", "user_acceptance"]
+          "enum": [
+            "pr_ready",
+            "user_acceptance"
+          ]
         },
         "completion_gate": {
           "type": "string",
-          "enum": ["release_confirmed", "production_deployment", "manual"]
+          "enum": [
+            "release_confirmed",
+            "production_deployment",
+            "manual"
+          ]
         },
         "audit_comments": {
           "type": "string",
-          "enum": ["none", "summary", "detailed"]
+          "enum": [
+            "none",
+            "summary",
+            "detailed"
+          ]
         },
         "project_check": {
           "type": "string",
-          "enum": ["disabled", "when_configured", "required"]
+          "enum": [
+            "disabled",
+            "when_configured",
+            "required"
+          ]
         },
         "release_reconciliation": {
           "type": "string",
-          "enum": ["disabled", "on_request", "enabled"]
+          "enum": [
+            "disabled",
+            "on_request",
+            "enabled"
+          ]
         },
         "output_verbosity": {
           "type": "string",
-          "enum": ["minimal", "standard", "detailed"]
+          "enum": [
+            "minimal",
+            "standard",
+            "detailed"
+          ]
         }
-      },
-      "additionalProperties": false
+      }
     }
   },
-  "additionalProperties": false,
   "allOf": [
     {
       "if": {
-        "properties": { "profile": { "const": "minimal" } }
+        "properties": {
+          "profile": {
+            "const": "minimal"
+          }
+        },
+        "required": [
+          "profile"
+        ]
       },
       "then": {
         "not": {
-          "required": ["overrides"],
+          "required": [
+            "overrides"
+          ],
           "properties": {
             "overrides": {
               "properties": {
-                "completion_gate": { "enum": ["production_deployment"] }
+                "completion_gate": {
+                  "enum": [
+                    "production_deployment"
+                  ]
+                }
               }
             }
           }
         }
       },
       "description": "minimal profile cannot override completion_gate to production_deployment"
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "minimal"
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "overrides": {
+              "properties": {
+                "audit_comments": {
+                  "enum": [
+                    "detailed"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "minimal profile cannot override audit_comments to detailed"
+    },
+    {
+      "if": {
+        "properties": {
+          "profile": {
+            "const": "minimal"
+          }
+        },
+        "required": [
+          "profile"
+        ]
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "overrides": {
+              "properties": {
+                "release_reconciliation": {
+                  "enum": [
+                    "enabled"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "minimal profile cannot override release_reconciliation to enabled"
+    },
+    {
+      "not": {
+        "properties": {
+          "overrides": {
+            "properties": {
+              "completion_gate": {
+                "enum": [
+                  "merge"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "description": "completion_gate 'merge' violates Reality Check (Invariant 5)"
+    },
+    {
+      "if": {
+        "properties": {
+          "overrides": {
+            "properties": {
+              "completion_gate": {
+                "const": "production_deployment"
+              }
+            }
+          }
+        }
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "overrides": {
+              "properties": {
+                "plan_confirmation": {
+                  "enum": [
+                    "implicit"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "production_deployment requires explicit/risk_based planning, never implicit"
+    },
+    {
+      "if": {
+        "allOf": [
+          {
+            "properties": {
+              "overrides": {
+                "properties": {
+                  "review_gate": {
+                    "const": "pr_ready"
+                  }
+                }
+              }
+            }
+          },
+          {
+            "properties": {
+              "overrides": {
+                "properties": {
+                  "completion_gate": {
+                    "const": "production_deployment"
+                  }
+                }
+              }
+            }
+          }
+        ]
+      },
+      "then": {
+        "not": {
+          "properties": {
+            "overrides": {
+              "properties": {
+                "audit_comments": {
+                  "enum": [
+                    "none"
+                  ]
+                }
+              }
+            }
+          }
+        }
+      },
+      "description": "pr_ready + production_deployment requires audit summary/detailed"
     }
   ]
 }
+```
+
+<!-- SCHEMA:END -->
 ```
 
 ## Strategy Items

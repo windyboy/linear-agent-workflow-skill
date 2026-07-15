@@ -11,6 +11,8 @@
     "test:all": "npm run test && npm run test:profile && npm run test:cli",
     "sync:forge": "node scripts/sync-forge.mjs",
     "verify:forge": "node scripts/sync-forge.mjs --check",
+    "sync:schema": "node scripts/generate-schema.mjs",
+    "verify:schema": "node scripts/generate-schema.mjs --check",
     "package": "npm run sync:forge && node scripts/package.mjs",
     "install-verify": "node scripts/install-verify.mjs",
     "ci": "npm run package && npm run install-verify && npm run test:all && npm run validate"

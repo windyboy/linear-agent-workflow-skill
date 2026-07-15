@@ -16,6 +16,7 @@ import {
   REQUIRES_READBACK_AFTER_TIMEOUT,
   shouldMoveToStarted,
   summarizePartial,
+  getCompletionGate,
 } from './policy.mjs';
 
 const scenarios = [];
@@ -156,6 +157,28 @@ scenario('Unknown completion gate fails closed', () => {
   }
   if (isDoneEligible({ completionGate: '', userConfirmedRelease: true }) !== false) {
     throw new Error('empty completion gate was silently eligible');
+  }
+});
+
+// 6d. getCompletionGate fails closed on an unknown profile (no silent downgrade).
+scenario('getCompletionGate fails closed on unknown profile', () => {
+  let threw = false;
+  try {
+    getCompletionGate('unknown_profile', {});
+  } catch {
+    threw = true;
+  }
+  if (!threw) throw new Error('getCompletionGate silently downgraded unknown profile to standard');
+
+  // Valid profiles still resolve, and overrides apply.
+  if (getCompletionGate('minimal', {}) !== 'release_confirmed') {
+    throw new Error('minimal profile did not resolve to release_confirmed');
+  }
+  if (getCompletionGate('strict', {}) !== 'production_deployment') {
+    throw new Error('strict profile did not resolve to production_deployment');
+  }
+  if (getCompletionGate('minimal', { completion_gate: 'manual' }) !== 'manual') {
+    throw new Error('minimal override to manual was not applied');
   }
 });
 

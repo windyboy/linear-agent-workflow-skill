@@ -195,8 +195,10 @@ group('Behavior scenario tests');
 }
 
 // --- 8. configuration-schema.md ↔ programmatic schema parity ---------------
-// The code (getSchema()/STRATEGY_SCHEMA) is the single source of truth; the
-// markdown must not drift into a third, hand-maintained definition.
+// getSchema() is the single source of truth; generate-schema.mjs writes its
+// output into the markdown, and this check asserts the committed markdown is
+// byte-for-byte equivalent (after key normalization) so the two can never drift
+// into a third, hand-maintained definition.
 group('configuration-schema.md ↔ getSchema() parity');
 {
   const docPath = join(skillDir, 'references', 'configuration-schema.md');
@@ -204,9 +206,9 @@ group('configuration-schema.md ↔ getSchema() parity');
     fail('configuration-schema.md missing');
   } else {
     const text = readFileSync(docPath, 'utf8');
-    const m = text.match(/```json\n([\s\S]*?)\n```/);
+    const m = text.match(/<!-- SCHEMA:START -->[\s\S]*?```json\n([\s\S]*?)\n```/);
     if (!m) {
-      fail('configuration-schema.md has no JSON schema block');
+      fail('configuration-schema.md has no generated JSON schema block');
     } else {
       let docSchema;
       try {
@@ -216,30 +218,10 @@ group('configuration-schema.md ↔ getSchema() parity');
       }
       if (docSchema) {
         const codeSchema = getSchema();
-        const reqMatch =
-          JSON.stringify((docSchema.required || []).slice().sort()) ===
-          JSON.stringify((codeSchema.required || []).slice().sort());
-        if (reqMatch) ok(`required matches: ${codeSchema.required.join(', ')}`);
-        else fail(`required mismatch: doc=${JSON.stringify(docSchema.required)} code=${JSON.stringify(codeSchema.required)}`);
-
-        const docProps = docSchema.properties?.overrides?.properties || {};
-        const codeProps = codeSchema.properties?.overrides?.properties || {};
-        let drift = 0;
-        for (const key of Object.keys(codeProps)) {
-          const de = docProps[key]?.enum;
-          const ce = codeProps[key]?.enum;
-          if (JSON.stringify((de || []).slice().sort()) !== JSON.stringify((ce || []).slice().sort())) {
-            fail(`enum drift for '${key}': doc=${JSON.stringify(de)} code=${JSON.stringify(ce)}`);
-            drift++;
-          }
-        }
-        for (const key of Object.keys(docProps)) {
-          if (!codeProps[key]) {
-            fail(`doc defines unknown strategy item '${key}'`);
-            drift++;
-          }
-        }
-        if (drift === 0) ok('all strategy-item enums match getSchema()');
+        const docStr = stableStringify(docSchema);
+        const codeStr = stableStringify(codeSchema);
+        if (docStr === codeStr) ok('configuration-schema.md matches getSchema() (full deep compare)');
+        else fail('configuration-schema.md drifted from getSchema(); run "npm run sync:schema"\n  doc : ' + docStr + '\n  code: ' + codeStr);
       }
     }
   }
@@ -279,6 +261,17 @@ function collect(dir, base = '') {
 
 function sha(p) {
   return createHash('sha256').update(readFileSync(p)).digest('hex');
+}
+
+// Recursively sort object keys so two logically-equal schemas compare equal
+// regardless of key ordering in source/markdown.
+function stableStringify(value) {
+  if (Array.isArray(value)) return '[' + value.map(stableStringify).join(',') + ']';
+  if (value && typeof value === 'object') {
+    const keys = Object.keys(value).sort();
+    return '{' + keys.map((k) => JSON.stringify(k) + ':' + stableStringify(value[k])).join(',') + '}';
+  }
+  return JSON.stringify(value);
 }
 
 function commandExists(cmd) {
