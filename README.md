@@ -7,8 +7,24 @@ A host-agnostic Agent Skill for safely managing the complete Linear issue delive
 ```text
 linear-workflow/
 ├── SKILL.md                        # Compact state-machine router + safety invariants
-├── mark-done.md                    # Independently callable post-release Done workflow
+├── configuration.md                # Profile and strategy configuration guide
+├── mark-done.md                    # Simplified Done workflow (core cases)
+├── templates/                      # Issue-creation and review templates
+│   ├── README.md
+│   ├── idea-feature.md
+│   ├── bug-report.md
+│   ├── refactor.md
+│   ├── change-review.md
+│   ├── release-review.md
+│   └── finding.md
+├── examples/                       # Profile configuration examples
+│   ├── README.md
+│   ├── minimal-project.md
+│   ├── standard-team.md
+│   └── strict-enterprise.md
 └── references/
+    ├── invariants.md               # Five non-negotiable safety rules
+    ├── configuration-schema.md     # Complete configuration schema
     ├── capability-discovery.md     # Tool capability mapping (first operation)
     ├── issue-discovery.md          # Browsing, creating, querying issues
     ├── start-implementation.md     # Read, plan, branch, implement
@@ -16,16 +32,7 @@ linear-workflow/
     ├── output-contracts.md         # Error format, idempotency rules
     ├── project-scope.md            # Scope boundary decisions
     ├── resume-work.md              # Resuming interrupted work
-    ├── review-gate-policy.md       # Configurable Review trigger
-    ├── template-system.md          # Issue creation templates
-    └── templates/                  # Concise issue-creation and review templates
-        ├── README.md
-        ├── idea-feature.md
-        ├── bug-report.md
-        ├── refactor.md
-        ├── change-review.md
-        ├── release-review.md
-        └── finding.md
+    └── review-gate-policy.md       # Configurable Review trigger
 ```
 
 The packaged artifact is available at `dist/linear-workflow.skill`.
@@ -58,7 +65,7 @@ The point at which an issue moves to Review is configurable via the **Review Gat
 | `user_acceptance` (default) | User explicitly accepts the change | CI → User acceptance → Review → Merge |
 | `pr_ready` | PR created and CI passes | CI → Review (acceptance during review) → Merge |
 
-Configure via repository instructions (`AGENTS.md`, `CLAUDE.md`), team/project conventions, or explicit user selection. The **Completion Gate** (`production_deployment`) is always mandatory and cannot be changed.
+Configure via repository instructions (`AGENTS.md`, `CLAUDE.md`), team/project conventions, or explicit user selection. The **Completion Gate** is determined by the active Profile: `release_confirmed` for minimal/standard, `production_deployment` for strict. See `linear-workflow/configuration.md` for customization.
 
 ### Resume existing work
 

@@ -1,7 +1,8 @@
 {
-  "version": "unknown",
-  "timestamp": "2026-07-15T07:04:01.928Z",
-  "sourceHash": "63fdf383df19b85a",
+  "version": "0.3.1",
+  "timestamp": "2026-07-15T07:29:45.786Z",
+  "sourceCommit": "ae9cdd0362acc2fc8eecca04b10c8b8363d0f86f",
+  "sourceHash": "19f627d7285a3160",
   "artifactPath": "/home/ubuntu/linear-agent-workflow-skill/dist/linear-workflow.skill",
   "metadataPath": "/home/ubuntu/linear-agent-workflow-skill/dist/linear-workflow.metadata.json",
   "profiles": [
@@ -31,8 +32,8 @@
     "references/review-gate-policy.md"
   ],
   "parity": {
-    "sourceHash": "63fdf383df19b85a",
+    "sourceHash": "19f627d7285a3160",
     "status": "in_parity",
-    "lastVerified": "2026-07-15T07:04:01.928Z"
+    "lastVerified": "2026-07-15T07:29:45.786Z"
   }
 }

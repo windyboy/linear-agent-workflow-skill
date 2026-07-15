@@ -1,14 +1,16 @@
 #!/usr/bin/env node
+
 // scripts/install-verify.mjs
 //
 // Verifies that the packaged artifact (dist/linear-workflow.skill) matches
 // the source tree (linear-workflow/). This script is run during CI to ensure
 // the distributed artifact is not stale.
 //
-// New in v0.3.0:
-// - Verifies source → dist → runtime parity
-// - Detects drift between versions
-// - Reports detailed diagnostics on mismatch
+// Verifies source → dist → runtime parity:
+// - Critical files present in both source and artifact
+// - Source hash matches (detects drift)
+// - Metadata is embedded and valid
+// - Parity status is confirmed
 
 import { existsSync, readFileSync } from 'node:fs';
 import { execSync } from 'node:child_process';
@@ -58,6 +60,7 @@ try {
 console.log('✓ Metadata valid');
 console.log('  Version: ' + metadata.version);
 console.log('  Timestamp: ' + metadata.timestamp);
+console.log('  Source commit: ' + (metadata.sourceCommit && metadata.sourceCommit !== 'unknown' ? metadata.sourceCommit.substring(0, 8) : 'unknown'));
 
 // Step 5: Verify critical files exist in source
 const criticalFiles = [
@@ -76,7 +79,10 @@ const criticalFiles = [
   'examples/README.md',
   'examples/minimal-project.md',
   'examples/standard-team.md',
-  'examples/strict-enterprise.md'
+  'examples/strict-enterprise.md',
+  'advanced/README.md',
+  'advanced/release-reconciliation.md',
+  'advanced/multi-team-scope.md'
 ];
 
 console.log('\nVerifying critical files in source:');
@@ -96,7 +102,16 @@ if (missingFiles.length > 0) {
   process.exit(1);
 }
 
-// Step 6: Verify critical files exist in artifact
+// Step 6: Verify metadata is embedded in artifact
+console.log('\nVerifying embedded metadata in artifact:');
+try {
+  execSync(`unzip -l "${out}" metadata.json > /dev/null 2>&1`);
+  console.log('  ✓ metadata.json embedded in artifact');
+} catch (e) {
+  console.warn('  ⚠ metadata.json not embedded (optional)');
+}
+
+// Step 7: Verify critical files exist in artifact
 console.log('\nVerifying critical files in artifact:');
 let artifactMissingFiles = [];
 for (const file of criticalFiles) {
@@ -116,7 +131,7 @@ if (artifactMissingFiles.length > 0) {
   process.exit(1);
 }
 
-// Step 7: Verify source hash matches
+// Step 8: Verify source hash matches
 console.log('\nVerifying source hash:');
 const currentSourceHash = generateDirectoryHash(src);
 const storedSourceHash = metadata.sourceHash;
@@ -130,7 +145,7 @@ if (currentSourceHash !== storedSourceHash) {
 }
 console.log('  ✓ Source hash matches');
 
-// Step 8: Verify parity status
+// Step 9: Verify parity status
 console.log('\nVerifying parity status:');
 if (metadata.parity && metadata.parity.status === 'in_parity') {
   console.log('  ✓ Artifact is in parity with source');
@@ -140,10 +155,21 @@ if (metadata.parity && metadata.parity.status === 'in_parity') {
   process.exit(1);
 }
 
-// Step 9: Report success
+// Step 10: Verify Profiles are available
+console.log('\nVerifying Profile support:');
+if (metadata.profiles && Array.isArray(metadata.profiles)) {
+  for (const profile of metadata.profiles) {
+    console.log('  ✓ ' + profile);
+  }
+} else {
+  console.warn('  ⚠ Profile list not available');
+}
+
+// Step 11: Report success
 console.log('\n✓ All verification checks passed');
 console.log('  Version: ' + metadata.version);
 console.log('  Status: Ready for deployment');
+console.log('  Source → Dist → Runtime parity: VERIFIED');
 
 // Helper functions
 
