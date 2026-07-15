@@ -49,16 +49,25 @@ try {
 // Step 5: Generate source hash (for drift detection)
 const sourceHash = generateDirectoryHash(src);
 
-// Step 6: Remove old artifact and zip the skill directory
+// Step 6: Get git commit hash for source tracking
+let sourceCommit = 'unknown';
+try {
+  sourceCommit = execSync('git rev-parse HEAD', { cwd: root, stdio: 'pipe' }).toString().trim();
+} catch (e) {
+  console.warn('warning: could not get git commit hash');
+}
+
+// Step 7: Remove old artifact and zip the skill directory
 console.log('Packaging linear-workflow v' + packageVersion);
 execSync(`rm -f "${out}"`, { stdio: 'ignore' });
 execSync(`zip -r -X -q "${out}" linear-workflow`, { cwd: root, stdio: 'inherit' });
 console.log('✓ Packaged ' + out);
 
-// Step 7: Generate and write metadata
+// Step 8: Generate and write metadata
 const metadata = {
   version: packageVersion,
   timestamp: new Date().toISOString(),
+  sourceCommit: sourceCommit,
   sourceHash: sourceHash,
   artifactPath: out,
   metadataPath: metadataFile,
@@ -95,12 +104,23 @@ const metadata = {
 writeFileSync(metadataFile, JSON.stringify(metadata, null, 2));
 console.log('✓ Generated metadata ' + metadataFile);
 
-// Step 8: Verify parity
+// Step 9: Embed metadata into .skill artifact
+console.log('\nEmbedding metadata into artifact...');
+const metadataContent = JSON.stringify(metadata, null, 2);
+try {
+  // Add metadata.json to the zip file
+  execSync(`echo '${metadataContent.replace(/'/g, "'\\''")}' | zip -q "${out}" -`, { stdio: 'pipe' });
+  console.log('✓ Embedded metadata.json into artifact');
+} catch (e) {
+  console.warn('warning: could not embed metadata into artifact, continuing...');
+}
+
+// Step 10: Verify parity
 console.log('\nVerifying source → dist parity...');
-const artifactContents = execSync(`unzip -l "${out}" | grep -E '\\.md$' | wc -l`).toString().trim();
+const artifactContents = execSync(`unzip -l "${out}" | grep -E '\.md$' | wc -l`).toString().trim();
 console.log('✓ Artifact contains ' + artifactContents + ' markdown files');
 
-// Step 9: Report success
+// Step 11: Report success
 console.log('\n✓ Packaging complete');
 console.log('  Version: ' + packageVersion);
 console.log('  Source hash: ' + sourceHash);

@@ -44,7 +44,23 @@ export function isValidStateType(t) {
   return VALID_STATE_TYPES.has(t);
 }
 
-// The Completion Gate is always production deployment and cannot change.
+// The Completion Gate is determined by the active Profile.
+// This function returns the gate based on profile and strategy overrides.
+export function getCompletionGate(profile = 'standard', overrides = {}) {
+  // Explicit override takes precedence
+  if (overrides.completion_gate) return overrides.completion_gate;
+  
+  // Profile defaults
+  const profileDefaults = {
+    minimal: 'release_confirmed',
+    standard: 'release_confirmed',
+    strict: 'production_deployment',
+  };
+  
+  return profileDefaults[profile] || profileDefaults.standard;
+}
+
+// Backward compatibility: export the strict default
 export const COMPLETION_GATE = 'production_deployment';
 
 // Scenario 5 + 6: merge alone never marks Done; a successful production
@@ -102,7 +118,15 @@ export function isWriteIntent(text = '') {
 export const REQUIRES_READBACK_AFTER_TIMEOUT = true;
 
 // Scenario 2: starting work without a confirmed plan must not move to started.
-export function shouldMoveToStarted({ planConfirmed = false } = {}) {
+// This is Profile-aware: minimal uses implicit, standard uses risk-based, strict uses explicit.
+export function shouldMoveToStarted({ planConfirmed = false, profile = 'standard', riskLevel = 'low' } = {}) {
+  // Scenario 2: Starting work without a confirmed plan does not move to started.
+  // This is Profile-aware: minimal uses implicit, standard/strict use explicit.
+  if (profile === 'minimal') {
+    // Minimal: implicit confirmation if user intent is clear
+    return true;
+  }
+  // Standard and strict: require explicit plan confirmation
   return planConfirmed === true;
 }
 

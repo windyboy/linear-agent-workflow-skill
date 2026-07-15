@@ -1,11 +1,13 @@
 {
-  "version": "0.3.0",
+  "version": "0.3.1",
   "scripts": {
     "validate": "node scripts/validate.mjs",
     "test": "node scripts/behavior.test.mjs",
+    "test:profile": "node scripts/profile-behavior.test.mjs",
+    "test:all": "npm run test && npm run test:profile",
     "package": "node scripts/package.mjs",
     "install-verify": "node scripts/install-verify.mjs",
-    "ci": "npm run package && npm run install-verify && npm run validate"
+    "ci": "npm run package && npm run install-verify && npm run test:all && npm run validate"
   },
   "dependencies": {
     "gitnexus": "^1.6.9"
