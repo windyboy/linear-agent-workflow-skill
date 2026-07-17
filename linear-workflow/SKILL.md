@@ -43,6 +43,10 @@ Linear Workflow offers three profiles that adjust confirmation frequency, audit 
 
 See [references/configuration-schema.md](references/configuration-schema.md) for complete profile definitions and configuration.
 
+## Execution Context & Workflow Binding (optional)
+
+Optionally retain local execution memory and freeze per-issue governance. Controlled by the `execution_context` config (`mode: disabled | auto | required`; default `disabled`). The full protocol — Workflow Binding (Layer 1, frozen governance metadata) and Execution Context (Layer 2, `execution_context_v1` working memory) — is in [references/execution-context.md](references/execution-context.md). When `mode: disabled` (default), no local files are created and behavior is unchanged.
+
 ## Quick Start
 
 ### 1. Discover or Create an Issue
@@ -101,6 +105,7 @@ Load only when relevant to the current phase:
 | [references/output-contracts.md](references/output-contracts.md) | Error handling, idempotency, audit format |
 | [references/project-scope.md](references/project-scope.md) | Scope boundary decisions |
 | [references/resume-work.md](references/resume-work.md) | Resuming interrupted work |
+| [references/execution-context.md](references/execution-context.md) | Optional Execution Context (Layer 2) + Workflow Binding (Layer 1) protocol |
 | [mark-done.md](mark-done.md) | Marking issues Done (independently callable) |
 | [templates/](templates/) | Issue creation templates |
 

@@ -22,6 +22,33 @@ When resuming, check evidence in the following order to locate the first incompl
 3. **Status matching**: If the Linear status is already at the target stage's state, do not re-write; if the status lags behind what the evidence shows, update to match the evidence.
 4. **User confirms resume point**: When resuming, report detected evidence and the suggested resume point to the user, then execute after confirmation.
 
+## Workflow Binding & Execution Context (optional)
+
+The full protocol lives in [execution-context.md](execution-context.md). This section only routes the resume flow.
+
+When resuming, resolve the per-issue **Workflow Binding** via the host capability contract (`read_binding`, discovered per [capability-discovery.md](capability-discovery.md)):
+
+- 0 Bindings + legacy-marked issue → recover via the legacy flow; do **not** backfill a historical Binding.
+- 0 Bindings + a v1 Context that references a Binding → fail closed (the referenced Binding is missing; this is **not** a legacy issue).
+- 1 Binding → verify schema, issue UUID, and `payload_fingerprint`; mismatch → report a config/history conflict and stop.
+- >1 Bindings → fail closed, ask the user to resolve.
+
+**Candidate context discovery.** Discover Execution Context files by the issue's **immutable UUID**, never by display id. If multiple candidate contexts match the UUID, pause and ask the user to select one; do not guess. If the display id (issue key) has changed but the UUID matches, resume the existing context and **report the stale display id** — never auto-rename the context directory.
+
+**Write-free conflict handling.** Before any Context write, re-read `plan.md` and verify `context_revision` and the observed plan hash. If they do not match (another writer touched the file), do **not** modify any Context file. Report `observed context conflict` in the current output and require user selection or explicit takeover. Only after a new baseline is re-read and confirmed may the Context be written (`paused` / `active`).
+
+**Ghost Branch / baseline drift.** If the branch referenced by the context no longer exists, or the working tree has diverged from the recorded baseline, pause and report `ghost branch` / `baseline drift`; do not silently continue.
+
+**Recovery summary (five questions).** After gathering evidence, report the resume point using exactly these five questions:
+
+1. **Goal?** — What was the issue intended to deliver?
+2. **Where am I?** — Which stage has evidence and which is the first stage lacking evidence?
+3. **What remains?** — What is left to implement, verify, or review?
+4. **What was learned?** — Constraints, blockers, or decisions discovered so far.
+5. **What was done and verified?** — Completed steps with their evidence (branch, commits, PR, CI, deployment).
+
+Externally-verifiable evidence (Linear status, Git records, PR, CI, deployment) always wins over local Context claims. A local `completed` context state is **not** evidence of release or Done.
+
 ## Resume Scenario Examples
 
 | Scenario | Detection result | Resume action |

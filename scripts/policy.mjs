@@ -40,7 +40,7 @@ export const VALID_STATE_TYPES = new Set([
 
 // Lowercase single-word backtick tokens that are not state types but are legit
 // in the skill prose, so the literal scanner does not false-positive on them.
-export const NON_STATE_WORDS = new Set(['type', 'unknown', 'duplicate']);
+export const NON_STATE_WORDS = new Set(['type', 'unknown', 'duplicate', 'disabled', 'auto', 'required']);
 
 export function isValidStateType(t) {
   return VALID_STATE_TYPES.has(t);

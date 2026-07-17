@@ -7,4 +7,5 @@ Use to validate a packaged artifact or release for readiness.
 - Frontmatter and internal-link validity:
 - Package content and secret checks:
 - Required validation results:
+- Execution Context alignment (optional; only if an `execution_context_v1` plan exists for this issue): recorded phases match the released scope, no open `in_progress` phase without a recorded exception
 - Decision: Ready | Blocked

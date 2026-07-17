@@ -67,6 +67,14 @@ The Agent uses the following logic to select the appropriate template:
 4. **Verifying release**: Use Release Review template
 5. **Documenting findings**: Use Finding format within the parent review template
 
+## Templates vs. Local Working Memory
+
+Issue templates are **creation and review artifacts** stored in Linear or used to structure reviews. They are distinct from the optional **Execution Context** local working memory (`execution_context_v1` `plan.md` / `findings.md` / `progress.md`) described in [references/execution-context.md](../references/execution-context.md):
+
+- Creation templates (`idea-feature.md`, `bug-report.md`, `refactor.md`) contain **no** structural Execution Context fields; they never reference `execution_context` or `workflow_binding`.
+- The Finding shared format (`finding.md`) is for documenting review findings **inside** a Change/Release Review; it is **not** raw local findings storage for an Execution Context.
+- Output templates (`change-review.md`, `release-review.md`) may reference an optional Execution Context Reconciliation/alignment section, but the template itself does not store local working memory.
+
 ## Packaging Boundary
 
 Runtime templates live under `linear-workflow/templates/`. The packaged artifact (`dist/linear-workflow.skill`) bundles `linear-workflow/`, so these templates ship with the skill. Repository-maintenance tooling (for example `scripts/`) is excluded from the bundle by design.
