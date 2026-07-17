@@ -25,7 +25,7 @@ In every case, browsing or planning alone does not change issue state or create 
 
 ## Assignment, Branching, and Implementation
 
-After user confirmation, re-read the current issue/state and team states:
+After implementation authorization under the effective `plan_confirmation` strategy, re-read the current issue/state and team states:
 
 1. If already in started/Review, do not re-write; state the current status. If completed/canceled/triage, do not auto-reopen; requires explicit user request. If assigned to someone else, inform the user and do not change assignee unilaterally.
 2. For startable backlog/unstarted, update to the actual `started_state`; only set current user as assignee when requested by user and supported by tools.
