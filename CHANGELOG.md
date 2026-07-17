@@ -2,6 +2,27 @@
 
 All notable changes to Linear Workflow are documented in this file.
 
+## [0.5.0] - 2026-07-17
+
+`v0.5.0` adds optional local **Execution Context (Layer 2)** and a durable **Workflow Binding (Layer 1)**, while remaining backward compatible by default (`execution_context.mode: disabled`).
+
+### Added
+- **Execution Context (Layer 2)**: optional local working memory (`plan.md`, `findings.md`, `progress.md`) for multi-session, multi-phase work. Defined by `execution_context.mode` (`disabled`/`auto`/`required`), `root`, and `format` (`execution_context_v1`). See `linear-workflow/references/execution-context.md`.
+- **Workflow Binding (Layer 1)**: a frozen, fingerprinted record of the resolved governance configuration (seven Profile strategy items + `execution_context` mode) created once per issue. Idempotent, fingerprinted resolution with 0/1/>1/mismatch handling.
+- `scripts/binding-payload.mjs` — pure payload serialize/parse/validate/fingerprint/resolve helpers (no Linear I/O).
+- `scripts/execution-context.mjs` — restricted frontmatter/phase parser, `context_status`-aware validation, auto-decision, gitignore table, write-free conflict detection, redaction, and state-machine primitives.
+- `scripts/profile-parser.mjs`: independent `EXECUTION_CONTEXT_SCHEMA`, generalized `parseSimpleYAML` nesting, and `resolveExecutionContext()`.
+- `scripts/policy.mjs`: `selectStartedState`/`selectReviewState` (team-workflow-driven) and `mayMoveToReview` (`review_gate` gates *when*, not *which* state).
+- `scripts/schema-validate.test.mjs` (Ajv v8) — valid/forbidden/negative-control matrix for the W1N-27 schema regression; `scripts/phase0.test.mjs`, `scripts/config-execution-context.test.mjs`, `scripts/workflow-binding.test.mjs`, `scripts/execution-context.test.mjs`.
+- `diagnose` now surfaces the locally resolved `execution_context` (Layer 2, local only; no fabricated Binding).
+
+### Fixed
+- `getSchema()` conditional constraints no longer match vacuously (W1N-27 regression): added `required` clauses so `minimal`/`standard` configs with valid overrides are accepted.
+
+### Changed
+- `execution_context` is an independent config field, **not** a Profile strategy item. The seven strategy items are unchanged.
+- Default behavior is unchanged: `disabled` creates no Layer 2 files and does not alter gate semantics, state ordering, branch behavior, or completion criteria. The Layer 1 Binding is the only documented new governance write for newly bound issues.
+
 ## [0.4.0] - 2026-07-15
 
 `v0.4.0` finalizes the profile/strategy reconstruction with strict fail-closed validation, a real CLI, and a single-source configuration schema.
@@ -165,6 +186,6 @@ Linear Workflow follows [Semantic Versioning](https://semver.org/):
 
 ---
 
-**Current Version**: 0.4.0  
+**Current Version**: 0.5.0  
 **Release Date**: 2026-07-15  
 **Status**: Stable

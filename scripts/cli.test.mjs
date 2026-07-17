@@ -91,5 +91,28 @@ function run(args) {
   else fail('unknown top-level command fails closed', 'exit 0');
 }
 
+// 8. `config diagnose` with an execution_context config surfaces the local
+//    Execution Context (Layer 2) section with mode/root/format.
+{
+  const { code, out } = run(['config', 'diagnose', join(fixtures, 'execution-context.yaml')]);
+  const ecOk =
+    code === 0 &&
+    /Execution Context \(Layer 2, local only\)/.test(out) &&
+    /mode: required/.test(out) &&
+    /root: \.agent-work/.test(out) &&
+    /format: execution_context_v1/.test(out);
+  if (ecOk) ok('config diagnose surfaces local execution_context');
+  else fail('config diagnose surfaces local execution_context', `code=${code}`);
+}
+
+// 9. `diagnose` must NOT fabricate a resolved Workflow Binding (it has no
+//    Linear/Binding provider). The output is local config only.
+{
+  const { code, out } = run(['config', 'diagnose', join(fixtures, 'execution-context.yaml')]);
+  const noBinding = code === 0 && !/Workflow Binding/.test(out) && !/Binding/.test(out);
+  if (noBinding) ok('diagnose shows no fabricated Workflow Binding');
+  else fail('diagnose shows no fabricated Workflow Binding', `matched Binding in output`);
+}
+
 console.log(`\nCLI tests: ${passed} passed, ${failed} failed`);
 if (failed) process.exit(1);

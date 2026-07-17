@@ -65,7 +65,7 @@ function runDiagnose(configFile) {
     process.exit(1);
   }
 
-  console.log(diagnose(config.profile, config.overrides || {}));
+  console.log(diagnose(config.profile, config.overrides || {}, config.execution_context));
 }
 
 function runSchema() {

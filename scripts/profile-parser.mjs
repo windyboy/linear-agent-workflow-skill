@@ -402,7 +402,7 @@ export function resolveExecutionContext(rawConfig = {}) {
  * @param {object} overrides - Strategy overrides
  * @returns {string} Diagnostic output
  */
-export function diagnose(profile = 'standard', overrides = {}) {
+export function diagnose(profile = 'standard', overrides = {}, executionContext) {
   // Build a complete, shape-valid config (version is always 1 here) so the
   // internal validation passes even though callers pass profile + overrides.
   const validation = validateConfig({ version: 1, profile, overrides });
@@ -421,6 +421,15 @@ export function diagnose(profile = 'standard', overrides = {}) {
     const marker = isOverridden ? ' (override)' : '';
     output += `  ${key}: ${value}${marker}\n`;
   }
+
+  // Execution Context (Layer 2) — local config only. The CLI has no Linear
+  // issue or Workflow Binding provider, so it must NOT display a "resolved
+  // Workflow Binding". Only the locally configured execution_context is shown.
+  const ec = resolveExecutionContext({ execution_context: executionContext });
+  output += `\nExecution Context (Layer 2, local only):\n`;
+  output += `  mode: ${ec.mode}\n`;
+  output += `  root: ${ec.root}\n`;
+  output += `  format: ${ec.format}\n`;
 
   output += `\nInvariants (always enforced):\n`;
   output += `  - Read-only requests must not write\n`;

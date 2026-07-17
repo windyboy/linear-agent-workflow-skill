@@ -264,6 +264,37 @@ For questions or issues during migration:
 
 ---
 
-**Version**: 0.3.0  
-**Last Updated**: 2026-07-15  
+## Migration Guide: v0.4.0 → v0.5.0
+
+Linear Workflow v0.5.0 introduces **optional local Execution Context (Layer 2)** and a **durable Workflow Binding (Layer 1)**, while preserving full backward compatibility. By default, v0.5.0 behaves identically to v0.4.0.
+
+### Key change: opt-in, not a behavior change
+
+- `execution_context.mode` defaults to **`disabled`**. With `disabled`, v0.5.0 produces **no Layer 2 files** and does **not** alter existing lifecycle gate semantics, state-transition ordering, branch behavior, or completion criteria.
+- The only new governance write for newly managed issues is the **Layer 1 Workflow Binding** — a frozen, fingerprinted record of the resolved governance configuration. This is the documented only new write; it does not change any lifecycle behavior.
+- To enable local execution memory, set `execution_context.mode` to `auto` (decide per issue after plan discovery) or `required` (fail closed if the working-memory root is not gitignored). See `linear-workflow/references/execution-context.md`.
+
+### Workflow Binding (Layer 1)
+
+- The Binding freezes the seven Profile strategy items plus the resolved `execution_context` mode at the moment an issue is first bound.
+- Resolution is **idempotent and fingerprinted**: a missing Binding is created and read back after authorization; an existing Binding is verified by schema, issue UUID, and `payload_fingerprint` and reused; more than one Binding fails closed and requires user action; a payload mismatch is **never** silently overwritten (reported as a config/history conflict).
+- The `payload_fingerprint` provides **deterministic integrity and duplicate-consistency checking only** — it does **not** provide authenticity or tamper-proofing (anyone who can write the comment can recompute the hash). Signing/protected metadata is out of scope for v0.5.0.
+- Pre-v0.5 issues with no Binding recover via the legacy flow and are **not** backfilled with a historical Binding. An issue that references a v1 Context but whose Binding is missing fails closed (it is not treated as legacy). Migrating an old issue to v0.5.0 requires an explicit user-triggered migration, not automatic creation on resume.
+
+### What did NOT change
+
+- No new Linear lifecycle state is introduced (lifecycle remains `discover → plan → started → review → release → completed`).
+- Execution Context adds **no sixth invariant**; it may not override the five non-negotiable invariants.
+- Local phase completion is never evidence for release or Done.
+
+### Upgrade steps
+
+1. No action required to keep v0.4.0 behavior — v0.5.0 is backward compatible by default.
+2. To opt in to Execution Context, add `execution_context:` to your `linear-workflow.config.yaml` (see `linear-workflow/configuration.md`) and ensure the working-memory root is gitignored.
+3. Review `linear-workflow/references/execution-context.md` for the full protocol, conflict handling, and security model.
+
+---
+
+**Version**: 0.5.0  
+**Last Updated**: 2026-07-17  
 **Upgrade Path**: v0.2.0 → v0.3.0 (backward compatible with strict profile)

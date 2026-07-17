@@ -82,5 +82,5 @@ Runtime templates live under `linear-workflow/templates/`. The packaged artifact
 ---
 
 **Total Templates**: 6 (3 creation + 2 output + 1 shared format)  
-**Last Updated**: 2026-07-15  
-**Version**: 0.3.0
+**Last Updated**: 2026-07-17  
+**Version**: 0.5.0
