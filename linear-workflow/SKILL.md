@@ -102,6 +102,7 @@ Load only when relevant to the current phase:
 | [references/configuration-schema.md](references/configuration-schema.md) | Configuring profiles and strategy items |
 | [references/capability-discovery.md](references/capability-discovery.md) | First Linear operation in session |
 | [references/execution-context.md](references/execution-context.md) | Optional Execution Context (Layer 2) + Workflow Binding (Layer 1) protocol |
+| [references/workflow-binding.md](references/workflow-binding.md) | Workflow Binding read / write / read-back runtime procedure (Layer 1 integration) |
 | [references/issue-discovery.md](references/issue-discovery.md) | Browsing, creating, or querying issues |
 | [references/start-implementation.md](references/start-implementation.md) | Reading issue, planning, branching, implementing |
 | [references/move-to-review.md](references/move-to-review.md) | Verification, acceptance, moving to Review |

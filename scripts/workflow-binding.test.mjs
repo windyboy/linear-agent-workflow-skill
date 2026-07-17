@@ -16,6 +16,8 @@ import {
   classifyBindings,
   verifyBinding,
 } from './binding-payload.mjs';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 let passed = 0;
 let failed = 0;
@@ -165,6 +167,85 @@ scenario('legacy issue with no binding is represented as count 0 (no invention)'
   const { count, matches } = classifyBindings([], 'uuid-legacy');
   eq(count, 0);
   eq(matches, []);
+});
+
+// --- Integration: read / write / read-back against an in-memory comment store ---
+// Pure, Linear-free simulation of the runtime procedure in
+// linear-workflow/references/workflow-binding.md. Proves the read → write →
+// read-back loop and the 0/1/>1/mismatch resolution using only the deterministic
+// helpers (no MCP/API I/O).
+
+function mockBindingStore(issueUuid) {
+  const comments = []; // array of comment bodies (strings)
+  const readBinding = () => classifyBindings(comments.map(parseBinding).filter(Boolean), issueUuid);
+  const writeBinding = (payload) => {
+    const v = validateBinding(payload);
+    assert(v.valid, 'payload must validate before write: ' + v.errors.join('; '));
+    comments.push(serializeBinding(payload));
+  };
+  // Idempotent write: an identical fingerprint for the same issue_uuid is a
+  // duplicate and must NOT create a second comment (de-dup, no overwrite).
+  const writeBindingIdempotent = (payload) => {
+    const v = validateBinding(payload);
+    assert(v.valid, 'payload must validate before write: ' + v.errors.join('; '));
+    const { count, matches } = readBinding();
+    if (count >= 1 && matches[0].payload_fingerprint === payload.payload_fingerprint) return 'dedup';
+    comments.push(serializeBinding(payload));
+    return 'written';
+  };
+  const readBackBinding = (expected) => {
+    const { count, matches } = readBinding();
+    if (count !== 1) return { ok: false, reason: `expected exactly 1 binding, got ${count}` };
+    return verifyBinding(matches[0], expected);
+  };
+  return { comments, readBinding, writeBinding, writeBindingIdempotent, readBackBinding };
+}
+
+scenario('read/write/read-back round-trip via mock comment store', () => {
+  const store = mockBindingStore('uuid-rt');
+  eq(store.readBinding().count, 0, 'starts with 0 bindings');
+  const b = makeBinding({ issueUuid: 'uuid-rt' });
+  eq(store.writeBindingIdempotent(b), 'written');
+  const rb = store.readBackBinding(b);
+  assert(rb.ok, 'read-back must verify the written binding: ' + (rb.reason || ''));
+  eq(store.readBinding().count, 1, 'exactly one binding after write');
+  // Identical re-write is de-duped, not a second binding.
+  eq(store.writeBindingIdempotent(b), 'dedup');
+  eq(store.readBinding().count, 1, 'identical re-write is de-duped, not a second binding');
+});
+
+scenario('>1 bindings → fail closed (require user resolution)', () => {
+  const store = mockBindingStore('uuid-dup');
+  // Two different frozen configs for the same issue (concurrent first-takeover).
+  store.writeBinding(makeBinding({ issueUuid: 'uuid-dup', contextDecision: 'enabled' }));
+  store.writeBinding(makeBinding({ issueUuid: 'uuid-dup', contextDecision: 'not_needed' }));
+  eq(store.readBinding().count, 2, 'two bindings detected');
+  const rb = store.readBackBinding(makeBinding({ issueUuid: 'uuid-dup', contextDecision: 'enabled' }));
+  assert(!rb.ok, 'read-back must fail closed when >1 binding exists');
+  eq(rb.reason, 'expected exactly 1 binding, got 2');
+});
+
+scenario('payload mismatch → no overwrite, report conflict', () => {
+  const store = mockBindingStore('uuid-mm');
+  const first = makeBinding({ issueUuid: 'uuid-mm', contextDecision: 'enabled' });
+  store.writeBinding(first);
+  // A later resolution disagrees with the frozen config; the host must NOT overwrite.
+  const conflicting = makeBinding({ issueUuid: 'uuid-mm', contextDecision: 'not_needed' });
+  const rb = store.readBackBinding(conflicting);
+  assert(!rb.ok, 'read-back of a conflicting config must fail (frozen config differs)');
+  assert(rb.reason.includes('payload_fingerprint'), 'reason should name fingerprint mismatch');
+  eq(store.readBinding().count, 1, 'the conflicting config was NOT written over the frozen one');
+});
+
+scenario('runtime protocol requires Linear MCP reads, comment write, and fresh read-back', () => {
+  const protocol = readFileSync(
+    join(process.cwd(), 'linear-workflow/references/workflow-binding.md'),
+    'utf8',
+  );
+  assert(/must use\s+the discovered Linear MCP capabilities/i.test(protocol), 'protocol must require Linear MCP execution');
+  assert(/Linear MCP \*\*list-comments\*\*/i.test(protocol), 'protocol must require MCP comment listing');
+  assert(/Linear MCP \*\*create-comment\*\*/i.test(protocol), 'protocol must require MCP comment creation');
+  assert(/fresh external read, not a cached pre-write result/i.test(protocol), 'protocol must require an external read-back');
 });
 
 console.log(`\n${passed}/${passed + failed} workflow-binding scenario(s) passed, ${failed} failed.`);

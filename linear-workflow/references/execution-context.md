@@ -37,6 +37,12 @@ contract and the fail-closed terminal case.
 | `write_binding(issue, payload)` | Persist a frozen binding | On failure, do **not** start implementation |
 | `read_back_binding(issue)` | Verify the written binding matches | Mismatch → report, do not claim success |
 
+The concrete host-executable procedure — storage model (Linear comment +
+envelope), capability mapping, the exact `read` / `write` / `read-back` steps,
+and the resolution tie-in — is in
+[references/workflow-binding.md](workflow-binding.md). That file performs no
+Linear I/O; the host executes the steps via its Linear provider.
+
 ### 2.2 Payload shape
 
 ```

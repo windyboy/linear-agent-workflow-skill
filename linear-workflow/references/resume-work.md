@@ -26,7 +26,7 @@ When resuming, check evidence in the following order to locate the first incompl
 
 The full protocol lives in [execution-context.md](execution-context.md). This section only routes the resume flow.
 
-When resuming, resolve the per-issue **Workflow Binding** via the host capability contract (`read_binding`, discovered per [capability-discovery.md](capability-discovery.md)):
+When resuming, resolve the per-issue **Workflow Binding** via the host capability contract (`read_binding`). The concrete read steps, storage model, and resolution tie-in are in [workflow-binding.md](workflow-binding.md); the capability is discovered per [capability-discovery.md](capability-discovery.md):
 
 - 0 Bindings + legacy-marked issue → recover via the legacy flow; do **not** backfill a historical Binding.
 - 0 Bindings + a v1 Context that references a Binding → fail closed (the referenced Binding is missing; this is **not** a legacy issue).

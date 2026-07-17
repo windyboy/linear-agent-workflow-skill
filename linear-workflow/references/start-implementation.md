@@ -37,7 +37,7 @@ After implementation authorization under the effective `plan_confirmation` strat
 
 The full protocol lives in [execution-context.md](execution-context.md). This section only routes the start flow; it does not redefine the protocol.
 
-**Layer 1 — Workflow Binding (governance metadata, not workflow authority).** After the implementation plan is formed and the `execution_context` decision is made, but **before** any started-state write, resolve the per-issue Binding via the host capability contract (`read_binding` / `write_binding` / `read_back_binding`, discovered per [capability-discovery.md](capability-discovery.md)):
+**Layer 1 — Workflow Binding (governance metadata, not workflow authority).** After the implementation plan is formed and the `execution_context` decision is made, but **before** any started-state write, resolve the per-issue Binding via the host capability contract (`read_binding` / `write_binding` / `read_back_binding`). The concrete read / write / read-back steps, storage model, and resolution tie-in are in [workflow-binding.md](workflow-binding.md); the capability is discovered per [capability-discovery.md](capability-discovery.md):
 
 - New issue, first authorized start, 0 existing Bindings → create the Binding (frozen `resolved_strategies` + `execution_context`) and read it back to confirm.
 - Exactly 1 Binding → verify schema, issue UUID, and `payload_fingerprint`; match → reuse; mismatch → do **not** overwrite, report a config/history conflict and stop.
