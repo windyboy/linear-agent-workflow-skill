@@ -48,6 +48,16 @@ export const STRATEGY_SCHEMA = {
   output_verbosity: ['minimal', 'standard', 'detailed'],
 };
 
+// Execution Context (Layer 2) configuration.
+// IMPORTANT: this is intentionally INDEPENDENT of the seven Profile strategy
+// items above. It is NOT a strategy item and is never merged by mergeConfig().
+export const EXECUTION_CONTEXT_SCHEMA = {
+  mode: ['disabled', 'auto', 'required'],
+  format: ['execution_context_v1'],
+  DEFAULT_ROOT: '.agent-work',
+  DEFAULT_FORMAT: 'execution_context_v1',
+};
+
 // Invariants that cannot be overridden
 export const PROTECTED_INVARIANTS = {
   read_before_write: true,
@@ -100,7 +110,10 @@ function validateOrThrow(config, source = 'config') {
 
 // Top-level keys allowed in a config file. Anything else is rejected so an
 // unrecognized line cannot silently become an empty object (fail closed).
-const ALLOWED_TOP_KEYS = new Set(['version', 'profile', 'overrides']);
+const ALLOWED_TOP_KEYS = new Set(['version', 'profile', 'overrides', 'execution_context']);
+
+// Top-level keys that may open a nested block in the simple YAML parser.
+const NESTED_CONFIG_KEYS = new Set(['overrides', 'execution_context']);
 
 /**
  * Minimal YAML parser for linear-workflow config format.
@@ -134,7 +147,7 @@ export function parseSimpleYAML(content) {
         throw new Error(`Invalid YAML: unknown top-level key "${key}"`);
       }
       if (value === '') {
-        if (key !== 'overrides') {
+        if (!NESTED_CONFIG_KEYS.has(key)) {
           throw new Error(`Invalid YAML: key "${key}" requires a value`);
         }
         // Open a nested object (e.g. `overrides:`)
@@ -236,7 +249,7 @@ export function checkForbiddenCombinations(profile, merged) {
 }
 
 // Top-level keys allowed in a config object. Anything else is rejected.
-const ALLOWED_CONFIG_KEYS = new Set(['version', 'profile', 'overrides']);
+const ALLOWED_CONFIG_KEYS = new Set(['version', 'profile', 'overrides', 'execution_context']);
 
 /**
  * Validate configuration against schema and invariants.
@@ -278,6 +291,31 @@ export function validateConfig(config) {
     }
   }
 
+  // execution_context, when present, must be a valid Layer 2 config object.
+  if (config.execution_context !== undefined) {
+    const ec = config.execution_context;
+    if (typeof ec !== 'object' || Array.isArray(ec) || ec === null) {
+      errors.push('Field "execution_context" must be an object');
+    } else {
+      if (ec.mode === undefined) {
+        errors.push('Field "execution_context.mode" is required');
+      } else if (!EXECUTION_CONTEXT_SCHEMA.mode.includes(ec.mode)) {
+        errors.push(`Invalid execution_context.mode '${ec.mode}'. Valid: ${EXECUTION_CONTEXT_SCHEMA.mode.join(', ')}`);
+      }
+      if (ec.format !== undefined && !EXECUTION_CONTEXT_SCHEMA.format.includes(ec.format)) {
+        errors.push(`Invalid execution_context.format '${ec.format}'. Valid: ${EXECUTION_CONTEXT_SCHEMA.format.join(', ')}`);
+      }
+      if (ec.root !== undefined && typeof ec.root !== 'string') {
+        errors.push('Field "execution_context.root" must be a string');
+      }
+      for (const key of Object.keys(ec)) {
+        if (!['mode', 'root', 'format'].includes(key)) {
+          errors.push(`Unknown execution_context field '${key}'`);
+        }
+      }
+    }
+  }
+
   // Reject unknown top-level keys.
   for (const key of Object.keys(config)) {
     if (!ALLOWED_CONFIG_KEYS.has(key)) {
@@ -310,6 +348,51 @@ export function validateConfig(config) {
   return {
     valid: errors.length === 0,
     errors,
+  };
+}
+
+/**
+ * Resolve the optional Execution Context (Layer 2) configuration.
+ *
+ * This is INDEPENDENT of the seven Profile strategy items and is never touched
+ * by mergeConfig(). It normalizes a raw `execution_context` block into a complete
+ * object with defaults filled in, failing closed on invalid input.
+ *
+ * Normalization table:
+ *   - absent execution_context        => { mode: 'disabled' }
+ *   - { mode: 'auto' }                => fills root (default .agent-work) + format (default execution_context_v1)
+ *   - mode: 'required' + non-string root => fail closed
+ *   - unknown nested field            => fail closed
+ *
+ * @param {object} rawConfig - The parsed config object (may omit execution_context)
+ * @returns {object} Resolved execution context { mode, root, format }
+ */
+export function resolveExecutionContext(rawConfig = {}) {
+  const raw = rawConfig && rawConfig.execution_context;
+  if (raw === undefined || raw === null) {
+    return { mode: 'disabled' };
+  }
+  if (typeof raw !== 'object' || Array.isArray(raw)) {
+    throw new Error('Invalid execution_context: must be an object');
+  }
+  if (raw.mode === undefined) {
+    throw new Error('Invalid execution_context: "mode" is required');
+  }
+  if (!EXECUTION_CONTEXT_SCHEMA.mode.includes(raw.mode)) {
+    throw new Error(`Invalid execution_context.mode '${raw.mode}'. Valid: ${EXECUTION_CONTEXT_SCHEMA.mode.join(', ')}`);
+  }
+  for (const key of Object.keys(raw)) {
+    if (!['mode', 'root', 'format'].includes(key)) {
+      throw new Error(`Unknown execution_context field '${key}'`);
+    }
+  }
+  if (raw.root !== undefined && typeof raw.root !== 'string') {
+    throw new Error('Invalid execution_context.root: must be a string');
+  }
+  return {
+    mode: raw.mode,
+    root: raw.root ?? EXECUTION_CONTEXT_SCHEMA.DEFAULT_ROOT,
+    format: raw.format ?? EXECUTION_CONTEXT_SCHEMA.DEFAULT_FORMAT,
   };
 }
 
@@ -400,6 +483,29 @@ export function getSchema() {
         description: 'Preset profile name',
       },
       overrides,
+      execution_context: {
+        type: 'object',
+        description: 'Optional local execution memory (Layer 2) configuration. Independent of the seven Profile strategy items.',
+        additionalProperties: false,
+        required: ['mode'],
+        properties: {
+          mode: {
+            type: 'string',
+            enum: ['disabled', 'auto', 'required'],
+            default: 'disabled',
+            description: 'disabled = no Layer 2 files; auto = decide per issue; required = always create context',
+          },
+          root: {
+            type: 'string',
+            description: 'Directory for execution context files (default .agent-work)',
+          },
+          format: {
+            type: 'string',
+            const: 'execution_context_v1',
+            description: 'Execution Context file format version',
+          },
+        },
+      },
     },
     allOf: [
       {

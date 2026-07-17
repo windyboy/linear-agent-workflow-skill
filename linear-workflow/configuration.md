@@ -244,6 +244,50 @@ Closing all three issues and adding release notes
 | `standard` | Summary of action, key decisions, verification results |
 | `detailed` | Complete trace: all decisions, evidence, alternative paths considered |
 
+## Execution Context (Layer 2)
+
+Execution Context is an **optional, independent** local working-memory layer. It is NOT one of the seven Profile strategy items and never changes gate/state/branch/completion semantics. It is disabled by default.
+
+```yaml
+version: 1
+profile: standard
+
+execution_context:
+  mode: auto            # disabled | auto | required
+  root: .agent-work     # directory for context files (default .agent-work)
+  format: execution_context_v1
+```
+
+### Modes
+
+| Mode | Behavior |
+|---|---|
+| `disabled` | No Layer 2 files are created. Newly bound issues still get the minimal Layer 1 Workflow Binding (see below). |
+| `auto` | After plan discovery, decide per issue whether to create a context (see Auto-decision). |
+| `required` | Always create a context for newly managed issues. |
+
+### Auto-decision (mode: auto)
+
+The decision is made **once** after plan discovery and must not be re-evaluated on resume. Triggers for `enabled`:
+- Spans multiple sessions
+- ≥ 3 meaningful phases
+- Multi-module / migration / rollback / unknowns
+- User requests progress tracking
+- Interrupted issue that is unreconstructable
+
+A single simple change (e.g. a one-file spelling fix) → `not_needed`.
+
+### Workspace hygiene
+
+- `root` defaults to `.agent-work` and **must be gitignored** by the repo. The skill **verifies** but never edits `.gitignore`.
+- `required` + unignored root → fail closed before any started-state write.
+- `auto` + unignored root → explain the risk and require user direction before creating any context file.
+- No Git repository → report that ignore status cannot be verified.
+
+### Relationship to Workflow Binding (Layer 1)
+
+Execution Context is Layer 2 (local working memory). The **Workflow Binding** is Layer 1: a frozen, per-issue governance record (profile + the seven resolved strategies + the resolved execution_context mode). It is created once for a newly managed issue, after plan convergence and the Context decision, and before any started-state write. Pre-v0.5 issues with no binding recover via the legacy flow without backfilling a historical binding. See [references/execution-context.md](references/execution-context.md) for the full protocol.
+
 ## Diagnosing Configuration
 
 To see the effective configuration for your project:

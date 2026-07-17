@@ -108,6 +108,35 @@ overrides:
           ]
         }
       }
+    },
+    "execution_context": {
+      "type": "object",
+      "description": "Optional local execution memory (Layer 2) configuration. Independent of the seven Profile strategy items.",
+      "additionalProperties": false,
+      "required": [
+        "mode"
+      ],
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": [
+            "disabled",
+            "auto",
+            "required"
+          ],
+          "default": "disabled",
+          "description": "disabled = no Layer 2 files; auto = decide per issue; required = always create context"
+        },
+        "root": {
+          "type": "string",
+          "description": "Directory for execution context files (default .agent-work)"
+        },
+        "format": {
+          "type": "string",
+          "const": "execution_context_v1",
+          "description": "Execution Context file format version"
+        }
+      }
     }
   },
   "allOf": [
