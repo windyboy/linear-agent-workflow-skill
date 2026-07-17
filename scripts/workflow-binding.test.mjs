@@ -57,6 +57,7 @@ const SEVEN = {
 function makeBinding(over = {}) {
   return buildBinding({
     issueUuid: 'uuid-abc',
+    issueIdentifier: 'W1N-28',
     teamId: 'team-1',
     profile: 'standard',
     resolvedStrategies: { ...SEVEN },
@@ -84,6 +85,14 @@ scenario('binding freezes all seven resolved_strategies', () => {
     assert(key in b.resolved_strategies, `missing ${key}`);
   }
   eq(Object.keys(b.resolved_strategies).sort(), RESOLVED_STRATEGY_KEYS.slice().sort());
+});
+
+scenario('binding without an immutable UUID uses a required identifier snapshot', () => {
+  const b = makeBinding({ issueUuid: undefined, issueIdentifier: 'W1N-29' });
+  const v = validateBinding(b);
+  assert(v.valid, 'identifier-only binding must validate: ' + v.errors.join('; '));
+  assert(!('issue_uuid' in b), 'identifier-only binding must not fabricate a UUID');
+  eq(classifyBindings([b], { commentScoped: true }).count, 1, 'comment-scoped read must find the binding');
 });
 
 scenario('binding with missing strategy fails closed', () => {

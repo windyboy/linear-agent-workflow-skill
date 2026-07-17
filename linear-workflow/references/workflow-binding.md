@@ -44,7 +44,8 @@ prose around it is advisory only.
 ```text
 ---linear-workflow-binding---
 schema_version: execution_binding_v1
-issue_uuid: <immutable Linear issue UUID>
+issue_uuid: <immutable Linear issue UUID, when the MCP exposes one>
+issue_identifier: <current display identifier snapshot, e.g. W1N-29>
 team_id: <team UUID>
 profile: minimal | standard | strict
 resolved_strategies: {"plan_confirmation":..., "review_gate":..., "completion_gate":..., "audit_comments":..., "project_check":..., "release_reconciliation":..., "output_verbosity":...}
@@ -61,6 +62,9 @@ payload_fingerprint: <sha256 hex>
 - `payload_fingerprint` is `SHA-256(canonicalJSON(frozen payload without bound_at
   and without payload_fingerprint))` — deterministic integrity, not authenticity
   (anyone who can write the comment can recompute it).
+- `issue_identifier` is always required. `issue_uuid` is included only when the
+  Linear MCP exposes an immutable UUID; a display identifier must never be
+  written into the `issue_uuid` field.
 - The host serializes/parses with `serializeBinding` / `parseBinding` (the pure
   helpers in `scripts/binding-payload.mjs`) so every host produces an identical
   envelope.
@@ -85,16 +89,20 @@ never invent a historical binding.
 
 Retrieve the Binding(s) for an issue.
 
-1. Call the discovered Linear MCP **get-issue** capability and resolve the
-   issue's immutable `issue_uuid` and `team_id` from its response
-   (never trust a display id for matching).
+1. Call the discovered Linear MCP **get-issue** capability and resolve its
+   `team_id`, current display identifier, and immutable `issue_uuid` only if
+   the response actually exposes one. Never manufacture a UUID from a display
+   identifier.
 2. Call the discovered Linear MCP **list-comments** capability for that issue.
    Paginate and only report retrieved pages — do not
    claim a complete set you did not fetch.
 3. For each comment body, extract the Binding envelope via `parseBinding`.
    Comments without the envelope are ignored.
-4. `classifyBindings(parsed, issue_uuid)` → `{ count, matches }` (0 / 1 / >1
-   matches keyed by `issue_uuid`).
+4. If an immutable UUID is available, `classifyBindings(parsed, issueUuid)` →
+   `{ count, matches }`. Otherwise use
+   `classifyBindings(parsed, { commentScoped: true })`: the MCP comment list is
+   already scoped by Linear to the exact Issue, so it is the authority for the
+   Binding association. The identifier is only a stale-detection snapshot.
 5. Return the classified result. Do **not** mutate anything.
 
 ---
@@ -126,7 +134,8 @@ Verify the written Binding matches the intended frozen payload.
 
 1. `read_binding(issue)` to re-list the issue's comments through Linear MCP;
    this is a fresh external read, not a cached pre-write result.
-2. `parseBinding` each; `classifyBindings` by `issue_uuid`.
+2. `parseBinding` each; classify by immutable UUID when available, otherwise by
+   the verified MCP comment scope.
 3. Expect exactly **1** match. If `count` is 0 or >1 → fail closed (report; see
    §7).
 4. `verifyBinding(actual, expected)`:
@@ -143,7 +152,7 @@ Verify the written Binding matches the intended frozen payload.
 | **0 bindings**, new issue, first authorized start | `write_binding` then `read_back_binding`; on verify ok → proceed to started-state write |
 | **0 bindings**, legacy-marked issue | Recover via the legacy flow; **do not** backfill a historical Binding |
 | **0 bindings**, a v1 Context references a Binding | **Fail closed** — this is **not** a legacy issue |
-| **1 binding** | `read_binding`; `verifyBinding`; match → reuse (no rewrite); mismatch → report a config/history conflict and stop |
+| **1 binding** | `read_binding`; `verifyBinding`; match → reuse (no rewrite); mismatch → report a config/history conflict and stop. With comment-scoped identity, report a stale `issue_identifier` snapshot but do not rewrite the frozen Binding merely because the issue key changed. |
 | **>1 bindings** | **Fail closed**; require the user to resolve the duplicate before proceeding |
 | **payload mismatch** (frozen config differs from resolved) | **Do not overwrite**; report a config/history conflict and require user direction |
 

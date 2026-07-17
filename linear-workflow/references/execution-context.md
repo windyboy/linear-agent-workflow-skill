@@ -47,7 +47,8 @@ Linear I/O; the host executes the steps via its Linear provider.
 
 ```
 schema_version:    execution_binding_v1
-issue_uuid:        <immutable Linear issue UUID>
+issue_uuid:        <immutable Linear issue UUID, when exposed by the MCP>
+issue_identifier:  <required current display identifier snapshot>
 team_id:           <team UUID>
 profile:           minimal | standard | strict
 resolved_strategies:
@@ -93,7 +94,7 @@ payload_fingerprint =
 | Explicitly **legacy** old issue, **0 bindings** | Recover via the legacy flow; do **not** backfill a historical binding. |
 | v1 Context present that **references** a binding, but binding **missing** | **Fail closed** — do not treat as legacy. |
 | Migrating an old issue to v0.5 | User must **explicitly trigger** migration; resume never auto-creates a binding. |
-| **1 binding** | Verify schema, `issue_uuid`, and `payload_fingerprint`; if consistent, reuse. |
+| **1 binding** | Verify schema and `payload_fingerprint`; verify `issue_uuid` when the MCP exposes one, otherwise rely on the Linear comment scope and report a stale `issue_identifier` snapshot without rewriting. |
 | **>1 bindings** | **Fail closed**; require the user to resolve duplicates. |
 | Payload mismatch (fingerprint/uuid/schema) | **Do not overwrite**; report a configuration/history conflict. |
 

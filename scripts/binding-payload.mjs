@@ -67,8 +67,11 @@ export function validateBinding(payload) {
   if (payload.schema_version !== BINDING_SCHEMA_VERSION) {
     errors.push(`Invalid schema_version '${payload.schema_version}' (expected ${BINDING_SCHEMA_VERSION})`);
   }
-  if (typeof payload.issue_uuid !== 'string' || !payload.issue_uuid) {
-    errors.push('Binding.issue_uuid must be a non-empty string');
+  if (payload.issue_uuid !== undefined && (typeof payload.issue_uuid !== 'string' || !payload.issue_uuid)) {
+    errors.push('Binding.issue_uuid must be a non-empty string when provided');
+  }
+  if (typeof payload.issue_identifier !== 'string' || !payload.issue_identifier) {
+    errors.push('Binding.issue_identifier must be a non-empty string');
   }
   if (typeof payload.team_id !== 'string' || !payload.team_id) {
     errors.push('Binding.team_id must be a non-empty string');
@@ -109,6 +112,7 @@ export function validateBinding(payload) {
  */
 export function buildBinding({
   issueUuid,
+  issueIdentifier,
   teamId,
   profile,
   resolvedStrategies,
@@ -119,7 +123,8 @@ export function buildBinding({
 }) {
   const frozen = {
     schema_version: BINDING_SCHEMA_VERSION,
-    issue_uuid: issueUuid,
+    ...(issueUuid ? { issue_uuid: issueUuid } : {}),
+    issue_identifier: issueIdentifier || issueUuid,
     team_id: teamId,
     profile,
     resolved_strategies: resolvedStrategies,
@@ -180,8 +185,19 @@ export function parseBinding(text) {
  * Used by the runtime resolution algorithm (the Markdown contract decides behavior).
  * @returns {object} { count: 0|1|>1, matches: object[] }
  */
-export function classifyBindings(bindings, issueUuid) {
-  const matches = (bindings || []).filter((b) => b && b.issue_uuid === issueUuid);
+export function classifyBindings(bindings, issueIdentity) {
+  const all = (bindings || []).filter(Boolean);
+  // When the Linear MCP exposes no immutable UUID, comments are already scoped
+  // to one issue by the MCP list-comments call. Do not pretend a display ID is
+  // immutable; classify every Binding returned from that verified comment scope.
+  if (issueIdentity && typeof issueIdentity === 'object' && issueIdentity.commentScoped) {
+    return { count: all.length, matches: all };
+  }
+  const issueUuid = typeof issueIdentity === 'string' ? issueIdentity : issueIdentity?.issueUuid;
+  const issueIdentifier = typeof issueIdentity === 'object' ? issueIdentity.issueIdentifier : undefined;
+  const matches = all.filter((b) =>
+    (issueUuid && b.issue_uuid === issueUuid) || (!issueUuid && issueIdentifier && b.issue_identifier === issueIdentifier),
+  );
   if (matches.length <= 1) return { count: matches.length, matches };
   return { count: matches.length, matches };
 }
@@ -198,8 +214,11 @@ export function verifyBinding(payload, expected) {
   if (!validation.valid) {
     return { ok: false, reason: validation.errors.join('; ') };
   }
-  if (payload.issue_uuid !== expected.issue_uuid) {
+  if (expected.issue_uuid && payload.issue_uuid !== expected.issue_uuid) {
     return { ok: false, reason: 'issue_uuid mismatch' };
+  }
+  if (!expected.issue_uuid && payload.issue_identifier !== expected.issue_identifier) {
+    return { ok: false, reason: 'issue_identifier mismatch' };
   }
   if (payload.schema_version !== expected.schema_version) {
     return { ok: false, reason: 'schema_version mismatch' };
