@@ -187,5 +187,5 @@ Linear Workflow follows [Semantic Versioning](https://semver.org/):
 ---
 
 **Current Version**: 0.5.0  
-**Release Date**: 2026-07-15  
+**Release Date**: 2026-07-17
 **Status**: Stable

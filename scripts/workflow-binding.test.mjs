@@ -109,6 +109,15 @@ scenario('fingerprint detects payload mutation (integrity, not authenticity)', (
   assert(v.errors.some((e) => e.includes('payload_fingerprint')), 'error should name fingerprint mismatch');
 });
 
+scenario('binding requires a non-null execution_context and fingerprint', () => {
+  const b = makeBinding();
+  const nullContext = { ...b, execution_context: null };
+  assert(!validateBinding(nullContext).valid, 'null execution_context must fail closed');
+  const missingFingerprint = { ...b };
+  delete missingFingerprint.payload_fingerprint;
+  assert(!validateBinding(missingFingerprint).valid, 'missing fingerprint must fail closed');
+});
+
 scenario('classifyBindings: 0 / 1 / >1 by issue_uuid', () => {
   eq(classifyBindings([], 'uuid-abc').count, 0);
   const one = makeBinding();
@@ -125,6 +134,9 @@ scenario('verifyBinding reports mismatch on issue_uuid / schema / fingerprint', 
   assert(!verifyBinding({ ...b, schema_version: 'other' }, b).ok, 'schema mismatch must fail');
   const tampered = { ...b, resolved_strategies: { ...SEVEN, review_gate: 'user_acceptance' } };
   assert(!verifyBinding(tampered, b).ok, 'fingerprint mismatch must fail');
+  const recomputed = { ...tampered };
+  recomputed.payload_fingerprint = computeFingerprint(recomputed);
+  assert(!verifyBinding(recomputed, b).ok, 'recomputed fingerprint for a changed payload must not bypass the frozen binding');
 });
 
 scenario('auto binding records configured_mode + context_decision', () => {

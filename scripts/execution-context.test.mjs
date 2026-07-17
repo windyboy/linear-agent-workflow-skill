@@ -221,9 +221,11 @@ scenario('gitignore: root nonexistent is handled per mode (init)', () => {
   eq(r.action, 'init');
 });
 
-scenario('gitignore: disabled mode never fails on ignore state', () => {
+scenario('gitignore: disabled mode never creates or initializes a root', () => {
   const r = checkGitignore({ mode: 'disabled', rootExists: true, rootIgnored: false, hasGit: true });
   eq(r.action, 'ok');
+  const nonexistent = checkGitignore({ mode: 'disabled', rootExists: false, rootIgnored: false, hasGit: true });
+  eq(nonexistent.action, 'ok');
 });
 
 // --- Content hash + write-free conflict (§10.1, v4 #5) ----------------------

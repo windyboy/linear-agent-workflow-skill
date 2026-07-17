@@ -215,13 +215,14 @@ export function decideAutoContext(issue = {}) {
  * @returns {object} { action: 'ok'|'init'|'report'|'require_user'|'fail_closed', message: string }
  */
 export function checkGitignore({ mode, rootExists, rootIgnored, hasGit }) {
+  if (mode === 'disabled') return { action: 'ok', message: 'disabled mode does not create context files' };
   if (!hasGit) return { action: 'report', message: 'git repository not found; ignore status cannot be verified' };
   if (!rootExists) return { action: 'init', message: 'root does not exist; will be created' };
   if (rootIgnored) return { action: 'ok', message: 'root is gitignored' };
   // root exists and is NOT ignored
   if (mode === 'required') return { action: 'fail_closed', message: 'required mode needs an ignored root; root is not gitignored' };
   if (mode === 'auto') return { action: 'require_user', message: 'root is not gitignored; explain risk and require user direction' };
-  return { action: 'ok', message: 'disabled mode does not create context files' };
+  return { action: 'ok', message: 'root is gitignored' };
 }
 
 // --- Content hash + conflict detection (§10.1, v4 correction #5) ------------

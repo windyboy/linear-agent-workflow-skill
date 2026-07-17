@@ -90,10 +90,12 @@ export function validateBinding(payload) {
       if (!RESOLVED_STRATEGY_KEYS.includes(key)) errors.push(`Binding.resolved_strategies has unknown key '${key}'`);
     }
   }
-  if (payload.execution_context !== undefined && (typeof payload.execution_context !== 'object' || Array.isArray(payload.execution_context))) {
+  if (!payload.execution_context || typeof payload.execution_context !== 'object' || Array.isArray(payload.execution_context)) {
     errors.push('Binding.execution_context must be an object');
   }
-  if (payload.payload_fingerprint !== undefined) {
+  if (typeof payload.payload_fingerprint !== 'string' || !payload.payload_fingerprint) {
+    errors.push('Binding.payload_fingerprint must be a non-empty string');
+  } else {
     const expected = computeFingerprint(payload);
     if (payload.payload_fingerprint !== expected) {
       errors.push('Binding.payload_fingerprint does not match frozen payload');
@@ -189,15 +191,21 @@ export function classifyBindings(bindings, issueUuid) {
  * @returns {object} { ok: boolean, reason?: string }
  */
 export function verifyBinding(payload, expected) {
-  if (!payload || payload.issue_uuid !== expected.issue_uuid) {
+  if (!expected || !validateBinding(expected).valid) {
+    return { ok: false, reason: 'expected binding is invalid' };
+  }
+  const validation = validateBinding(payload);
+  if (!validation.valid) {
+    return { ok: false, reason: validation.errors.join('; ') };
+  }
+  if (payload.issue_uuid !== expected.issue_uuid) {
     return { ok: false, reason: 'issue_uuid mismatch' };
   }
   if (payload.schema_version !== expected.schema_version) {
     return { ok: false, reason: 'schema_version mismatch' };
   }
-  const fp = computeFingerprint(payload);
-  if (payload.payload_fingerprint !== fp) {
-    return { ok: false, reason: 'payload_fingerprint mismatch (integrity)' };
+  if (payload.payload_fingerprint !== expected.payload_fingerprint) {
+    return { ok: false, reason: 'payload_fingerprint mismatch (frozen payload)' };
   }
   return { ok: true };
 }
