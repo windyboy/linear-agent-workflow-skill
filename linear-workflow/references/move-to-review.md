@@ -1,8 +1,8 @@
 # Move to Review
 
-The trigger for moving to Review is determined by the [Review Gate Policy](review-gate-policy.md). Before executing, read the policy (repository instructions → team/project instructions → user selection → default `user_acceptance`).
+The trigger for moving to Review is determined by the [Review Gate Policy](review-gate-policy.md). Before executing, read the policy and resolve the effective `review_gate` from the active Profile (repository instructions → team/project instructions → user selection → Profile default). Do not assume a hard-coded default; the Profile default is `pr_ready` for the `minimal` and `standard` profiles and `user_acceptance` for the `strict` profile (see `configuration.md`).
 
-## Policy `user_acceptance` (default)
+## Policy `user_acceptance`
 
 After automated verification, commit/PR/CI status have all been truthfully summarized, request final acceptance:
 
