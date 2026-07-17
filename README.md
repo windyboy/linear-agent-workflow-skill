@@ -67,6 +67,8 @@ The point at which an issue moves to Review is configurable via the **Review Gat
 
 Configure via repository instructions (`AGENTS.md`, `CLAUDE.md`), team/project conventions, or explicit user selection. The **Completion Gate** is determined by the active Profile: `release_confirmed` for minimal/standard, `production_deployment` for strict. See `linear-workflow/configuration.md` for customization.
 
+> **v0.5.0 — optional Execution Context.** v0.5.0 adds an opt-in local **Execution Context** (`execution_context.mode`, default `disabled`) for multi-session working memory, plus a durable **Workflow Binding** that freezes the resolved governance configuration per issue. With `disabled` (the default), no Layer 2 local files are created and lifecycle gate semantics remain unchanged; newly managed issues still receive the minimal Layer 1 Binding. See `linear-workflow/references/execution-context.md`.
+
 ### Resume existing work
 
 When resuming interrupted work, the skill detects the current state from evidence (branch, commits, PR, CI, deployment records) and continues from the first unverified stage — no stage is skipped without evidence.

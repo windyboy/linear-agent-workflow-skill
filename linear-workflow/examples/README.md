@@ -110,5 +110,5 @@ See [../configuration.md](../configuration.md) for migration details.
 
 ---
 
-**Version**: 0.3.0  
-**Last Updated**: 2026-07-15
+**Version**: 0.5.0  
+**Last Updated**: 2026-07-17

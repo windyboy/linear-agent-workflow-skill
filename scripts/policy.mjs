@@ -40,7 +40,7 @@ export const VALID_STATE_TYPES = new Set([
 
 // Lowercase single-word backtick tokens that are not state types but are legit
 // in the skill prose, so the literal scanner does not false-positive on them.
-export const NON_STATE_WORDS = new Set(['type', 'unknown', 'duplicate']);
+export const NON_STATE_WORDS = new Set(['type', 'unknown', 'duplicate', 'disabled', 'auto', 'required']);
 
 export function isValidStateType(t) {
   return VALID_STATE_TYPES.has(t);
@@ -165,4 +165,43 @@ export function summarizePartial(stateOk, commentOk) {
   if (stateOk && !commentOk) return 'partial: state updated, comment failed';
   if (!stateOk && commentOk) return 'partial: comment added, state failed';
   return 'failed';
+}
+
+// --- W1N-28 Phase 0: state selection is driven by the discovered team workflow,
+// NOT derived purely from the Profile. The Profile/override only determines the
+// *Review Gate policy* (WHEN, via mayMoveToReview); the concrete Linear state
+// names are resolved from discoveredTeamStates + an optional stateMapping. This
+// keeps a single source of truth: configuration.md resolves the policy, the team
+// workflow resolves the state names. Node tests use fixture states; the Markdown
+// references must not declare their own gate/state defaults (see phase0.test.mjs).
+
+// discoveredTeamStates: Array<{ name: string, type: string }>
+// stateMapping (optional): { started?: string, review?: string, completed?: string }
+// Returns the resolved state name, or null when not discoverable or ambiguous.
+export function selectStartedState(discoveredTeamStates = [], stateMapping = {}) {
+  if (stateMapping && stateMapping.started) return stateMapping.started;
+  const started = (discoveredTeamStates || []).filter((s) => s && s.type === 'started');
+  if (started.length === 1) return started[0].name;
+  return null; // not found or ambiguous
+}
+
+export function selectReviewState(discoveredTeamStates = [], stateMapping = {}) {
+  if (stateMapping && stateMapping.review) return stateMapping.review;
+  const review = (discoveredTeamStates || []).filter(
+    (s) => s && (s.type === 'review' || /review/i.test(s.name || ''))
+  );
+  if (review.length === 1) return review[0].name;
+  return null; // not found or ambiguous
+}
+
+// The Review Gate policy (from the active Profile/override) determines WHEN an
+// issue may move to Review; it does NOT choose the target state.
+//   reviewGate: 'pr_ready' | 'user_acceptance' (resolved from effective config)
+//   evidence:  { prCreated?: boolean, ciPassed?: boolean, userAccepted?: boolean }
+// Unknown policy fails closed (returns false).
+export function mayMoveToReview(evidence = {}, reviewGate = 'pr_ready') {
+  const { prCreated = false, ciPassed = false, userAccepted = false } = evidence || {};
+  if (reviewGate === 'user_acceptance') return userAccepted === true;
+  if (reviewGate === 'pr_ready') return prCreated === true && ciPassed === true;
+  return false;
 }
