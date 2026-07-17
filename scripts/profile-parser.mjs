@@ -409,6 +409,7 @@ export function getSchema() {
             required: ['overrides'],
             properties: {
               overrides: {
+                required: ['completion_gate'],
                 properties: { completion_gate: { enum: ['production_deployment'] } },
               },
             },
@@ -420,8 +421,10 @@ export function getSchema() {
         if: { properties: { profile: { const: 'minimal' } }, required: ['profile'] },
         then: {
           not: {
+            required: ['overrides'],
             properties: {
               overrides: {
+                required: ['audit_comments'],
                 properties: { audit_comments: { enum: ['detailed'] } },
               },
             },
@@ -433,8 +436,10 @@ export function getSchema() {
         if: { properties: { profile: { const: 'minimal' } }, required: ['profile'] },
         then: {
           not: {
+            required: ['overrides'],
             properties: {
               overrides: {
+                required: ['release_reconciliation'],
                 properties: { release_reconciliation: { enum: ['enabled'] } },
               },
             },
@@ -444,8 +449,10 @@ export function getSchema() {
       },
       {
         not: {
+          required: ['overrides'],
           properties: {
             overrides: {
+              required: ['completion_gate'],
               properties: { completion_gate: { enum: ['merge'] } },
             },
           },
@@ -454,47 +461,35 @@ export function getSchema() {
       },
       {
         if: {
+          required: ['overrides'],
           properties: {
             overrides: {
-              properties: { completion_gate: { const: 'production_deployment' } },
-            },
-          },
-        },
-        then: {
-          not: {
-            properties: {
-              overrides: {
-                properties: { plan_confirmation: { enum: ['implicit'] } },
+              required: ['completion_gate', 'plan_confirmation'],
+              properties: {
+                completion_gate: { const: 'production_deployment' },
+                plan_confirmation: { const: 'implicit' },
               },
             },
           },
         },
+        then: false,
         description: 'production_deployment requires explicit/risk_based planning, never implicit',
       },
       {
         if: {
-          allOf: [
-            {
+          required: ['overrides'],
+          properties: {
+            overrides: {
+              required: ['review_gate', 'completion_gate', 'audit_comments'],
               properties: {
-                overrides: { properties: { review_gate: { const: 'pr_ready' } } },
-              },
-            },
-            {
-              properties: {
-                overrides: { properties: { completion_gate: { const: 'production_deployment' } } },
-              },
-            },
-          ],
-        },
-        then: {
-          not: {
-            properties: {
-              overrides: {
-                properties: { audit_comments: { enum: ['none'] } },
+                review_gate: { const: 'pr_ready' },
+                completion_gate: { const: 'production_deployment' },
+                audit_comments: { const: 'none' },
               },
             },
           },
         },
+        then: false,
         description: 'pr_ready + production_deployment requires audit summary/detailed',
       },
     ],

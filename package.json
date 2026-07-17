@@ -8,7 +8,8 @@
     "test": "node scripts/behavior.test.mjs",
     "test:profile": "node scripts/profile-behavior.test.mjs",
     "test:cli": "node scripts/cli.test.mjs",
-    "test:all": "npm run test && npm run test:profile && npm run test:cli",
+    "test:schema": "node scripts/schema-validate.test.mjs",
+    "test:all": "npm run test && npm run test:profile && npm run test:cli && npm run test:schema",
     "sync:forge": "node scripts/sync-forge.mjs",
     "verify:forge": "node scripts/sync-forge.mjs --check",
     "sync:schema": "node scripts/generate-schema.mjs",
@@ -22,5 +23,8 @@
   },
   "trustedDependencies": [
     "@ladybugdb/core"
-  ]
+  ],
+  "devDependencies": {
+    "ajv": "^8.20.0"
+  }
 }
