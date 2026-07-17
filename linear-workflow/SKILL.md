@@ -108,7 +108,6 @@ Load only when relevant to the current phase:
 | [references/output-contracts.md](references/output-contracts.md) | Error handling, idempotency, audit format |
 | [references/project-scope.md](references/project-scope.md) | Scope boundary decisions |
 | [references/resume-work.md](references/resume-work.md) | Resuming interrupted work |
-| [references/execution-context.md](references/execution-context.md) | Optional Execution Context (Layer 2) + Workflow Binding (Layer 1) protocol |
 | [mark-done.md](mark-done.md) | Marking issues Done (independently callable) |
 | [templates/](templates/) | Issue creation templates |
 
