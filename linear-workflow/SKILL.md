@@ -90,6 +90,8 @@ overrides:
 
 Run `linear-workflow config diagnose` to see the effective configuration.
 
+**Optional Execution Context.** By default (`execution_context.mode: disabled`) the skill keeps no local working memory and creates no per-issue Workflow Binding beyond the minimal governance record. Set `execution_context.mode: auto` to let the Agent decide per issue, or `required` to always retain an `execution_context_v1` plan. See [references/execution-context.md](references/execution-context.md) for the full protocol.
+
 ## Reference Files
 
 Load only when relevant to the current phase:
@@ -99,6 +101,7 @@ Load only when relevant to the current phase:
 | [references/invariants.md](references/invariants.md) | Understanding the five non-negotiable rules |
 | [references/configuration-schema.md](references/configuration-schema.md) | Configuring profiles and strategy items |
 | [references/capability-discovery.md](references/capability-discovery.md) | First Linear operation in session |
+| [references/execution-context.md](references/execution-context.md) | Optional Execution Context (Layer 2) + Workflow Binding (Layer 1) protocol |
 | [references/issue-discovery.md](references/issue-discovery.md) | Browsing, creating, or querying issues |
 | [references/start-implementation.md](references/start-implementation.md) | Reading issue, planning, branching, implementing |
 | [references/move-to-review.md](references/move-to-review.md) | Verification, acceptance, moving to Review |

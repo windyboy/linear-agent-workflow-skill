@@ -155,3 +155,11 @@ The optional Execution Context (Layer 2 working memory) and Workflow Binding (La
 - A local `completed` context state is working memory only and is **not** completion evidence (Invariant 5).
 - A Workflow Binding freezes governance configuration; it is metadata, not a write authority, and never relaxes Authorization (Invariant 3) or Team Boundary (Invariant 4).
 - Conflict or paused states are reported in the current output; the Agent does not silently auto-repair or auto-merge (consistent with Invariant 1 read-before-write and Invariant 2 verification).
+
+## Execution Context & Workflow Binding
+
+The optional Execution Context (Layer 2 working memory) and Workflow Binding (Layer 1 governance metadata) introduced in v0.5 **add no sixth invariant** and may not override these five. In particular:
+
+- A local `completed` context state is working memory only and is **not** completion evidence (Invariant 5).
+- A Workflow Binding freezes governance configuration; it is metadata, not a write authority, and never relaxes Authorization (Invariant 3) or Team Boundary (Invariant 4).
+- Conflict or paused states are reported in the current output; the Agent does not silently auto-repair or auto-merge (consistent with Invariant 1 read-before-write and Invariant 2 verification).
