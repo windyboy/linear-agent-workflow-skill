@@ -23,6 +23,12 @@ import {
   classifyCandidates,
   extractFindings,
 } from './execution-context.mjs';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const TEMPLATES_DIR = join(__dirname, '..', 'linear-workflow', 'templates');
 
 let passed = 0;
 let failed = 0;
@@ -339,6 +345,16 @@ scenario('mark-done callable with zero context', () => {
 
 scenario('execution-context.md vocabulary is limited to CONTEXT_STATE_WORDS', () => {
   eq(CONTEXT_STATE_WORDS, ['prepared', 'active', 'paused', 'abandoned', 'completed']);
+});
+
+// --- §14 negative guardrails: creation templates + finding.md stay EC-free ---
+
+scenario('§14 negative guardrail: creation templates + finding.md contain no execution_context/workflow_binding', () => {
+  const guarded = ['idea-feature.md', 'bug-report.md', 'refactor.md', 'finding.md'];
+  for (const name of guarded) {
+    const content = readFileSync(join(TEMPLATES_DIR, name), 'utf8');
+    assert(!/execution_context|workflow_binding/.test(content), `${name} must not reference execution_context/workflow_binding (§14)`);
+  }
 });
 
 console.log(`\n${passed}/${passed + failed} execution-context scenario(s) passed, ${failed} failed.`);
