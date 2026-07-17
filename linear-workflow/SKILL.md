@@ -45,7 +45,7 @@ See [references/configuration-schema.md](references/configuration-schema.md) for
 
 ## Execution Context & Workflow Binding (optional)
 
-Optionally retain local execution memory and freeze per-issue governance. Controlled by the `execution_context` config (`mode: disabled | auto | required`; default `disabled`). The full protocol — Workflow Binding (Layer 1, frozen governance metadata) and Execution Context (Layer 2, `execution_context_v1` working memory) — is in [references/execution-context.md](references/execution-context.md). When `mode: disabled` (default), no local files are created and behavior is unchanged.
+Optionally retain local execution memory and freeze per-issue governance. Controlled by the `execution_context` config (`mode: disabled | auto | required`; default `disabled`). The full protocol — Workflow Binding (Layer 1, frozen governance metadata) and Execution Context (Layer 2, `execution_context_v1` working memory) — is in [references/execution-context.md](references/execution-context.md). When `mode: disabled` (default), no Layer 2 files are created; newly bound issues still receive the minimal Layer 1 Workflow Binding (frozen governance record).
 
 ## Quick Start
 

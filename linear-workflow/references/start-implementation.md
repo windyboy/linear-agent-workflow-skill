@@ -16,7 +16,12 @@ Output an implementation plan containing at minimum:
 - Test and rollback considerations
 - Branch suggestions and PR/release risks
 
-Wait for user confirmation ("start processing" or equivalent explicit instruction) before entering the implementation phase; browsing or planning alone does not change issue state or create branches.
+Before entering the implementation phase, follow the effective profile's `plan_confirmation` strategy (resolved from `configuration.md` — do **not** apply a single hard-coded rule here):
+- `implicit` → start immediately after reading and planning; the user's "start work on ABC-123" is itself the authorization.
+- `risk_based` → start immediately for simple changes; escalate (ask the user to confirm) for risky changes (DB migration, API change, multi-module, unknowns).
+- `explicit` → wait for explicit user confirmation ("start processing" or equivalent) before changing issue state or creating a branch.
+
+In every case, browsing or planning alone does not change issue state or create branches; the *requirement* for confirmation is determined by the profile, not fixed here.
 
 ## Assignment, Branching, and Implementation
 

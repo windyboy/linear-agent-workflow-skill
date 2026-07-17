@@ -128,6 +128,26 @@ scenario('no child reference declares a competing gate default', () => {
   }
 });
 
+scenario('start-implementation.md routes start authorization by the effective plan_confirmation profile', () => {
+  const doc = readRel('linear-workflow/references/start-implementation.md');
+  // Must route by profile, not hard-code a single confirmation rule.
+  assert(/plan_confirmation/i.test(doc), 'doc must route start authorization via plan_confirmation');
+  for (const mode of ['implicit', 'risk_based', 'explicit']) {
+    assert(new RegExp(`\`?${mode}\`?`).test(doc), `doc must enumerate the ${mode} plan_confirmation mode`);
+  }
+  // Regression guard: the old unconditional "always wait for explicit confirmation" rule must be gone.
+  assert(!/Wait for user confirmation \("start processing"/.test(doc), 'doc must not hard-code an unconditional confirmation rule');
+});
+
+scenario('SKILL.md does not claim disabled mode has no behavior change', () => {
+  const doc = readRel('linear-workflow/SKILL.md');
+  // Regression guard: the v4 plan explicitly prohibited claiming disabled = no behavior change.
+  assert(!/no local files are created and behavior is unchanged/i.test(doc), 'SKILL.md must not claim disabled mode is behaviorally unchanged');
+  // Correct wording: disabled creates no Layer 2 files but still writes the minimal Layer 1 Binding.
+  assert(/no Layer 2 files are created/i.test(doc), 'SKILL.md must state disabled creates no Layer 2 files');
+  assert(/minimal Layer 1 Workflow Binding/i.test(doc), 'SKILL.md must state disabled still writes the minimal Layer 1 Binding');
+});
+
 export function runPhase0Tests() {
   let passed = 0;
   let failed = 0;
