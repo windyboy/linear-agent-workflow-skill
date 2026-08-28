@@ -1,8 +1,14 @@
 # Workflow Binding (Layer 1)
 
-Host procedure for `read_binding` / `write_binding` / `read_back_binding`. Contract: [execution-context.md](execution-context.md). No Linear I/O in this file — execute via discovered MCP capabilities.
+Host procedure for `read_binding` / `write_binding` / `read_back_binding`. Contract: [execution-context.md](execution-context.md). No Linear I/O in this file — at runtime the Agent **must use the discovered Linear MCP capabilities**.
 
-Typical MCP mapping: get issue · list comments · create comment · list again for read-back. Tool names vary; discover per [capability-discovery.md](capability-discovery.md). No list+create comments → fail closed.
+| Step | MCP |
+|---|---|
+| Read | Linear MCP **get-issue**; Linear MCP **list-comments** |
+| Write | Linear MCP **create-comment** |
+| Read-back | Linear MCP **list-comments** again — fresh external read, not a cached pre-write result |
+
+Discover tools per [capability-discovery.md](capability-discovery.md). No list+create → fail closed.
 
 ## Storage
 
@@ -42,7 +48,7 @@ Written even when `audit_comments: none`.
 
 ### `read_back_binding(issue, expected)`
 
-1. Fresh `read_binding`
+1. Fresh `read_binding` (fresh external read, not a cached pre-write result)
 2. Expect exactly 1 match
 3. `verifyBinding` — fingerprint/uuid/schema mismatch → report, don't overwrite
 

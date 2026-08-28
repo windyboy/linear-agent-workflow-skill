@@ -1,13 +1,13 @@
 # Review Gate Policy
 
-`review_gate` and `completion_gate` come from effective profile + overrides — not hardcoded here. Resolve via [configuration.md](../configuration.md) / `linear-workflow config diagnose`.
+`review_gate` and `completion_gate` come from effective profile + overrides — not hardcoded here. The Completion Gate is profile-driven. Resolve via [configuration.md](../configuration.md) / `linear-workflow config diagnose`.
 
 ## Policies
 
 | `review_gate` | Trigger | Default |
 |---|---|---|
-| `pr_ready` | PR + CI pass | minimal, standard |
-| `user_acceptance` | User confirms fix | strict |
+| `pr_ready` | PR + CI pass | `pr_ready` (default for `minimal` and `standard`) |
+| `user_acceptance` | User confirms fix | `user_acceptance` (default for `strict`) |
 
 | `completion_gate` | Trigger | Default |
 |---|---|---|

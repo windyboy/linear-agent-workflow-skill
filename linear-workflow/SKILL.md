@@ -48,6 +48,8 @@ Config: [configuration.md](configuration.md) · Schema: [references/configuratio
 - **Layer 1 — Workflow Binding**: frozen governance on Linear (always for new issues)
 - **Layer 2 — Execution Context**: local `plan.md` / `findings.md` / `progress.md`
 
+When `disabled`, no Layer 2 files are created; newly bound issues still receive the minimal Layer 1 Workflow Binding.
+
 Protocol: [references/execution-context.md](references/execution-context.md)
 
 ## Agent Brief
