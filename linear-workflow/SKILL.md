@@ -19,14 +19,7 @@ Details: [references/invariants.md](references/invariants.md)
 
 ## Lifecycle
 
-**Work phases** (how to solve an issue):
-
-```text
-发现 → 解决方案 → 任务分解 → 执行 → 检验
-discover → solution → tasks → execute → verify
-```
-
-Details: [references/work-phases.md](references/work-phases.md)
+**Work phases:** `discover → solution → tasks → execute → verify` — [work-phases.md](references/work-phases.md)
 
 **Linear states** (issue status):
 
@@ -66,9 +59,9 @@ At handoff points (start, progress, pause, review, done), post a second-person *
 | Step | User says | Agent does |
 |---|---|---|
 | Discover | "Create dark mode feature" | Clarify, create issue, return ID |
-| Start | "Start ABC-123" | 发现 → 解决方案 → 任务分解 → confirm (per profile) → 执行 → `started` |
-| Implement | "Pushed changes" | 检验: PR + CI → review (per `review_gate`) |
-| Done | "Mark ABC-123 done" | 检验: release/deploy evidence → `completed` |
+| Start | "Start ABC-123" | Discover → solution → tasks → confirm → execute → `started` |
+| Implement | "Pushed changes" | Verify: PR + CI → review (per `review_gate`) |
+| Done | "Mark ABC-123 done" | Verify: release/deploy evidence → `completed` |
 
 ```yaml
 # linear-workflow.config.yaml (optional; default profile: standard)
@@ -90,7 +83,7 @@ Load only when needed:
 | [execution-context.md](references/execution-context.md) | Layer 1 + 2 protocol |
 | [workflow-binding.md](references/workflow-binding.md) | Binding read/write/read-back |
 | [work-phases.md](references/work-phases.md) | 5-phase resolve flow |
-| [issue-discovery.md](references/issue-discovery.md) | Browse / create / query (发现) |
+| [issue-discovery.md](references/issue-discovery.md) | Discover: browse / create / query |
 | [start-implementation.md](references/start-implementation.md) | Solution, tasks, execute, verify |
 | [move-to-review.md](references/move-to-review.md) | Move to Review |
 | [agent-brief.md](references/agent-brief.md) | Agent handoff comments |

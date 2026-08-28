@@ -1,97 +1,42 @@
-# Execution Context & Workflow Binding (v0.5)
+# Execution Context & Binding (v0.5)
 
-Normative protocol for optional Layer 2 (local) and Layer 1 (Linear). Node helpers in `scripts/` validate only — no Linear I/O.
+Optional Layer 2 (local) + Layer 1 (Linear). `scripts/` validates only. Binding procedure: [workflow-binding.md](workflow-binding.md).
 
-**Out of scope:** hooks, session stores, auto `.gitignore` edits, multi-agent locking, local state as release evidence.
+| Layer | Storage | Role |
+|---|---|---|
+| **1 Binding** | Linear comment | Frozen governance (profile + 7 strategies + context mode) |
+| **2 Context** | `.agent-work/` (`plan.md`, `findings.md`, `progress.md`) | Working memory only |
 
-## Two Layers
+No sixth invariant. Local `completed` context ≠ Done evidence.
 
-| Layer | What | Where | Authority |
-|---|---|---|---|
-| **1 — Binding** | Frozen governance (profile + 7 strategies + context mode) | Linear comment | Governance only |
-| **2 — Context** | `plan.md`, `findings.md`, `progress.md` | Local `root` (default `.agent-work`) | Working memory only |
-
-Five invariants unchanged. No sixth invariant.
-
-## Layer 1: Workflow Binding
-
-Capabilities (via Linear provider): `read_binding` · `write_binding` · `read_back_binding`. Procedure: [workflow-binding.md](workflow-binding.md).
-
-### Payload
-
-```
-schema_version: execution_binding_v1
-issue_uuid / issue_identifier / team_id
-profile: minimal | standard | strict
-resolved_strategies: { all 7 items }
-execution_context: { mode, root, format }
-configured_mode / context_decision (auto only)
-bound_at / payload_fingerprint
-```
+## Binding
 
 Envelope: `---linear-workflow-binding---` … `---end-linear-workflow-binding---`
 
-Fingerprint: `SHA-256(canonicalJSON(payload without bound_at and payload_fingerprint))` — integrity only, not authenticity.
+Fingerprint: `SHA-256(canonicalJSON(payload sans bound_at/fingerprint))` — integrity only.
 
-### Resolution
-
-| Case | Action |
+| Count | Action |
 |---|---|
-| 0 bindings, new issue | Create before started write; read back |
-| 0 bindings, legacy | Legacy flow; no backfill |
-| Context refs missing binding | Fail closed |
-| 1 binding | Verify fingerprint; reuse or stop on mismatch |
-| >1 bindings | Fail closed |
-| Payload mismatch | Don't overwrite; report |
+| 0, new | Create before started; read back |
+| 0, legacy | Legacy flow; no backfill |
+| 0, context refs binding | Fail closed |
+| 1 | Verify fingerprint; reuse or stop |
+| >1 / mismatch | Fail closed; don't overwrite |
 
-`auto` mode: record `context_decision: enabled|not_needed` once after plan; don't re-evaluate on resume.
+`auto`: record `context_decision: enabled|not_needed` once after plan.
 
-## Layer 2: Context Format
+## Context
 
-### `plan.md` frontmatter
+`plan.md` frontmatter: `format`, `issue`, `context_status` (prepared/active/paused/abandoned/completed), `context_revision`, `plan_hash`.
 
-```markdown
----
-format: execution_context_v1
-issue: { uuid, display_id }
-context_status: prepared | active | paused | abandoned | completed
-context_revision: <int>
-plan_hash: <sha256>
----
-```
+Phases: `not_started` · `in_progress` · `completed` · `excepted` (≠ context_status).
 
-Phase statuses: `not_started` · `in_progress` · `completed` · `excepted` (≠ context_status).
+Conflict: `context_revision` + hash mismatch → report `observed context conflict`; don't modify files.
 
-### State machine
+`auto` triggers: multi-session, ≥3 phases, migration, user tracking request. One-file fix → `not_needed`.
 
-```
-prepared → active ⇄ paused → completed/abandoned (terminal)
-```
+Gitignore: `required`+unignored → fail closed; skill never edits `.gitignore`.
 
-## Conflict Handling
+Resume: match by issue UUID; external evidence wins ([resume-work.md](resume-work.md)).
 
-Detect via `context_revision` + plan hash (not mtime). Mismatch → don't modify files; report `observed context conflict`; require user selection. Cross-file updates not atomic — re-read before write, bump revision after.
-
-## Auto-Decision (`mode: auto`)
-
-`enabled` if any: multi-session, ≥3 phases, migration/rollback, user requests tracking, unreconstructable interrupt. Simple one-file fix → `not_needed`.
-
-## Gitignore
-
-| Mode | Unignored root |
-|---|---|
-| `required` | Fail closed before started write |
-| `auto` | Explain risk; require user direction |
-| `disabled` | N/A (no files) |
-
-Skill never edits `.gitignore`.
-
-## Resume
-
-Match contexts by issue UUID. Stale display ID → report, don't rename. Multiple candidates → user selects. Ghost branch / drift → pause. Recovery: five questions in [resume-work.md](resume-work.md); external evidence wins.
-
-## Safety
-
-- `findings.md` cannot carry governance fields (injection immunity)
-- Redact secrets and personal paths before surfacing in comments
-- Templates get no context fields; `mark-done.md` works with zero context
+Redact secrets. `findings.md` cannot carry governance fields.
