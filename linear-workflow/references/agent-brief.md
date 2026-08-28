@@ -6,8 +6,8 @@ Short, second-person Linear comment for the **next Agent session**. Complements 
 
 | Moment | Capture |
 |---|---|
-| Start | Goal, plan, branch, user constraints |
-| Progress | Changes, decisions, blockers |
+| Start | Goal, solution summary, task list, branch, constraints |
+| Progress | Tasks done/remaining, changes, decisions, blockers |
 | Pause / session end | Stage, done/next, evidence pointers |
 | Review | Built, how to verify, gaps |
 | Done | Outcome, release pointer, lessons |
@@ -28,8 +28,14 @@ On in-progress issues: find latest `---agent-brief---` … `---end-agent-brief--
 
 **Where things stand:** Implementation in progress; branch created.
 
+**Solution:** CSS variables + settings toggle (navbar rejected)
+
+**Tasks:**
+- [x] T1: theme.css variables — done
+- [ ] T2: Header.tsx colors
+- [ ] T3: Settings toggle + tests
+
 **What already happened:**
-- Plan: CSS variables + settings toggle (navbar rejected)
 - Branch `feature/ABC-123-dark-mode`, commits through `a1b2c3d`
 
 **What you should know:**
