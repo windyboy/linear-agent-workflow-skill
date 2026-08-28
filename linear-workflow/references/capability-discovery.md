@@ -1,16 +1,16 @@
-# Capability Discovery and Safety Boundaries
+# Capability Discovery
 
-Before performing the first Linear operation in a session, confirm and record capability mappings by capability rather than tool name:
+Before first Linear op in session, confirm capabilities:
 
-| Capability | Purpose | Handling when missing |
-| --- | --- | --- |
-| Query team/workspace, projects, assignees, labels | Determine scope and display fields | Restrict query scope and explain; cannot guess team |
-| List/search issues with pagination | Query backlog and candidates | Only report retrieved pages; cannot claim complete results |
-| Get full issue by identifier/ID | Read before implementation and writes | Do not start implementation or writes on that issue |
-| Create issue | Record confirmed needs/problems in Linear | Can analyze and draft content; must not claim creation |
-| Get workflow states (with ID, name, type, order) | Map states | Cannot update state |
-| Update issue state | Lifecycle changes | Continue read-only analysis; must not claim mutation |
-| Get/add comments and association info | Context and audit comments | When state can be updated, separately report comment not done |
-| Read/write/read-back Workflow Binding (Layer 1) | Use Linear MCP to get the issue, list its comments, create the `---linear-workflow-binding---` envelope comment, then list comments again and verify it; `parseBinding` / `verifyBinding` only validate MCP data and never substitute for the MCP calls | If the host cannot list/add comments, the capability is unsupported → fail closed: do not start implementation; never invent a historical binding. Concrete procedure: [references/workflow-binding.md](workflow-binding.md) |
+| Capability | Missing → |
+|---|---|
+| Query team/project/labels | Restrict scope; explain |
+| List/search issues | Report retrieved pages only |
+| Get issue by ID | No start/write on that issue |
+| Create issue | Draft only; don't claim created |
+| Get workflow states | No state updates |
+| Update issue state | Read-only analysis only |
+| Comments + associations | Report comment failures separately |
+| Binding read/write/read-back | Fail closed; no invented binding — [workflow-binding.md](workflow-binding.md) |
 
-On auth failure, insufficient permissions, timeout, or incomplete fields, do not substitute natural language for actual writes. After a tool timeout, **re-query** the target issue first before deciding whether to retry.
+Auth/permission/timeout failure → no simulated writes. After timeout, re-query issue before retry.

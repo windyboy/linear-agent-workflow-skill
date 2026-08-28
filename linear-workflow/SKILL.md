@@ -1,162 +1,122 @@
 ---
 name: linear-workflow
-description: Manage the end-to-end delivery lifecycle of Linear issues with configurable workflow profiles. Use when the user mentions Linear, an issue identifier (e.g. ABC-123), unfinished requirements or bugs, creating issues, starting/picking up work, implementation plans, branching, PRs, verification, moving to Review, releasing/deploying, or closing issues. Supports minimal (personal projects), standard (small teams), and strict (enterprise) profiles.
+description: Linear issue lifecycle with configurable profiles. Use for Linear, issue IDs (ABC-123), creating/starting work, plans, PRs, review, release, or closing issues. Profiles: minimal, standard, strict.
 ---
 
 # Linear Workflow
 
-Manage Linear issues through a unified lifecycle with configurable safety levels. The Skill uses the **Linear integration** provided by the current Agent runtime (Linear MCP, API, connector, or equivalent).
+Unified Linear issue lifecycle. Uses the host's Linear integration (MCP, API, or equivalent).
 
-## Five Non-Negotiable Invariants
+## Five Invariants (non-negotiable)
 
-These rules apply to **all Profiles** and cannot be overridden:
+1. **Read-Before-Write** — Re-read before any status change
+2. **Write-Back Verification** — Read back after every write
+3. **Authorization** — No create/modify without user authorization
+4. **Team/Project Boundary** — No cross-boundary writes; escalate
+5. **Reality Check** — Done only with evidence matching `completion_gate`
 
-1. **Read-Before-Write** — Re-read the issue before any status change to prevent lost updates
-2. **Write-Back Verification** — Confirm every write succeeded by reading back the new state
-3. **Authorization** — Require explicit user authorization before creating or modifying issues
-4. **Team/Project Boundary** — Respect team and project scope; escalate cross-boundary writes
-5. **Reality Check** — Report completion only with evidence matching the configured `completion_gate`
+Details: [references/invariants.md](references/invariants.md)
 
-See [references/invariants.md](references/invariants.md) for detailed definitions and test cases.
+## Lifecycle
 
-## Unified Lifecycle
+**Work phases:** `discover → solution → tasks → execute → verify` — [work-phases.md](references/work-phases.md)
 
-All Profiles share the same state machine:
+**Linear states** (issue status):
 
 ```text
-discover → plan → started → review → release → completed
+backlog/unstarted → started → review → completed
 ```
 
-**State Types** (Linear API): `backlog` → `unstarted` → `started` → `completed` → `canceled`
+Linear state types: `backlog` → `unstarted` → `started` → `completed` → `canceled`
 
-**Canonical Identifier**: Use boundary-safe regex `\b[A-Z0-9]{1,5}-\d+\b` to extract issue IDs.
+Issue ID regex: `\b[A-Z0-9]{1,5}-\d+\b`
 
 ## Profiles
 
-Linear Workflow offers three profiles that adjust confirmation frequency, audit detail, and automation level while preserving the unified lifecycle:
-
-| Profile | Use Case | Key Traits |
+| Profile | For | Traits |
 |---|---|---|
-| **minimal** | Personal projects, 1–2 people | Implicit plan confirmation, PR-ready review gate, no audit comments |
-| **standard** | Small teams (3–5 people) | Risk-based plan confirmation, PR-ready review gate, summary audit comments |
-| **strict** | Enterprise, multi-team, regulated | Explicit plan confirmation, user acceptance review gate, detailed audit comments |
+| **minimal** | 1–2 people | Implicit plan, PR-ready review, no audit |
+| **standard** | Small teams | Risk-based plan, PR-ready review, summary audit |
+| **strict** | Enterprise | Explicit plan, user-acceptance review, detailed audit |
 
-See [references/configuration-schema.md](references/configuration-schema.md) for complete profile definitions and configuration.
+Config: [configuration.md](configuration.md) · Schema: [references/configuration-schema.md](references/configuration-schema.md)
 
-## Execution Context & Workflow Binding (optional)
+## Optional: Execution Context
 
-Optionally retain local execution memory and freeze per-issue governance. Controlled by the `execution_context` config (`mode: disabled | auto | required`; default `disabled`). The full protocol — Workflow Binding (Layer 1, frozen governance metadata) and Execution Context (Layer 2, `execution_context_v1` working memory) — is in [references/execution-context.md](references/execution-context.md). When `mode: disabled` (default), no Layer 2 files are created; newly bound issues still receive the minimal Layer 1 Workflow Binding (frozen governance record).
+`execution_context.mode`: `disabled` (default) | `auto` | `required`
+
+- **Layer 1 — Workflow Binding**: frozen governance on Linear (always for new issues)
+- **Layer 2 — Execution Context**: local `plan.md` / `findings.md` / `progress.md`
+
+When `disabled`, no Layer 2 files are created; newly bound issues still receive the minimal Layer 1 Workflow Binding.
+
+Protocol: [references/execution-context.md](references/execution-context.md)
+
+## Agent Brief
+
+At handoff points (start, progress, pause, review, done), post a second-person **Agent Brief** comment so the next Agent session can pick up quickly. Independent of audit comments; no extra config. See [references/agent-brief.md](references/agent-brief.md).
 
 ## Quick Start
 
-### 1. Discover or Create an Issue
-
-**User**: "Create a feature to add dark mode"  
-**Agent**: Reads user request, asks clarifying questions if needed, creates issue with template, returns issue ID.
-
-### 2. Start Work
-
-**User**: "Start work on ABC-123"  
-**Agent**: Reads issue, forms implementation plan, confirms (based on profile), creates branch, updates issue to `started`.
-
-### 3. Implement and Push
-
-**User**: "I've pushed the changes"  
-**Agent**: Verifies PR is created and CI passes, moves issue to `review` (based on review_gate).
-
-### 4. Mark Done
-
-**User**: "Mark ABC-123 as done"  
-**Agent**: Verifies completion evidence (based on completion_gate), moves issue to `completed`.
-
-### Configuration
-
-Create `linear-workflow.config.yaml` in your project:
+| Step | User says | Agent does |
+|---|---|---|
+| Discover | "Create dark mode feature" | Clarify, create issue, return ID |
+| Start | "Start ABC-123" | Discover → solution → tasks → confirm → execute → `started` |
+| Implement | "Pushed changes" | Verify: PR + CI → review (per `review_gate`) |
+| Done | "Mark ABC-123 done" | Verify: release/deploy evidence → `completed` |
 
 ```yaml
+# linear-workflow.config.yaml (optional; default profile: standard)
 version: 1
 profile: standard
 ```
 
-To override specific strategy items:
-
-```yaml
-version: 1
-profile: minimal
-overrides:
-  review_gate: user_acceptance
-  audit_comments: summary
-```
-
-Run `linear-workflow config diagnose` to see the effective configuration.
-
-**Optional Execution Context.** By default (`execution_context.mode: disabled`) the skill keeps no local working memory and creates no per-issue Workflow Binding beyond the minimal governance record. Set `execution_context.mode: auto` to let the Agent decide per issue, or `required` to always retain an `execution_context_v1` plan. See [references/execution-context.md](references/execution-context.md) for the full protocol.
+Diagnose: `linear-workflow config diagnose`
 
 ## Reference Files
 
-Load only when relevant to the current phase:
+Load only when needed:
 
-| File | When to Load |
+| File | When |
 |---|---|
-| [references/invariants.md](references/invariants.md) | Understanding the five non-negotiable rules |
-| [references/configuration-schema.md](references/configuration-schema.md) | Configuring profiles and strategy items |
-| [references/capability-discovery.md](references/capability-discovery.md) | First Linear operation in session |
-| [references/execution-context.md](references/execution-context.md) | Optional Execution Context (Layer 2) + Workflow Binding (Layer 1) protocol |
-| [references/workflow-binding.md](references/workflow-binding.md) | Workflow Binding read / write / read-back runtime procedure (Layer 1 integration) |
-| [references/issue-discovery.md](references/issue-discovery.md) | Browsing, creating, or querying issues |
-| [references/start-implementation.md](references/start-implementation.md) | Reading issue, planning, branching, implementing |
-| [references/move-to-review.md](references/move-to-review.md) | Verification, acceptance, moving to Review |
-| [references/output-contracts.md](references/output-contracts.md) | Error handling, idempotency, audit format |
-| [references/project-scope.md](references/project-scope.md) | Scope boundary decisions |
-| [references/resume-work.md](references/resume-work.md) | Resuming interrupted work |
-| [mark-done.md](mark-done.md) | Marking issues Done (independently callable) |
-| [templates/](templates/) | Issue creation templates |
+| [invariants.md](references/invariants.md) | Invariant details |
+| [configuration-schema.md](references/configuration-schema.md) | Config / profiles |
+| [capability-discovery.md](references/capability-discovery.md) | First Linear op in session |
+| [execution-context.md](references/execution-context.md) | Layer 1 + 2 protocol |
+| [workflow-binding.md](references/workflow-binding.md) | Binding read/write/read-back |
+| [work-phases.md](references/work-phases.md) | 5-phase resolve flow |
+| [issue-discovery.md](references/issue-discovery.md) | Discover: browse / create / query |
+| [start-implementation.md](references/start-implementation.md) | Solution, tasks, execute, verify |
+| [move-to-review.md](references/move-to-review.md) | Move to Review |
+| [agent-brief.md](references/agent-brief.md) | Agent handoff comments |
+| [output-contracts.md](references/output-contracts.md) | Errors, idempotency |
+| [project-scope.md](references/project-scope.md) | Scope boundaries |
+| [resume-work.md](references/resume-work.md) | Resume interrupted work |
+| [mark-done.md](mark-done.md) | Mark Done (standalone) |
+| [templates/](templates/) | Issue templates |
 
-## Transition Table
+## Transitions
 
-| Current State | Allowed Actions | Evidence Required |
+| State | Action | Evidence |
 |---|---|---|
-| `backlog` / `unstarted` | Start work → `started` | User confirms start (implicit or explicit per profile) |
-| `started` (implementation) | Move to review → `started` (review) | User says "verified" or PR ready (per review_gate) |
-| `started` (review) | Mark done → `completed` | Completion evidence per configured completion_gate |
-| `completed` / `canceled` | None (unless explicit reopen) | — |
+| `backlog` / `unstarted` | → `started` | User confirms start (per profile) |
+| `started` (impl) | → review | PR ready or user verified (per `review_gate`) |
+| `started` (review) | → `completed` | Per `completion_gate` |
+| `completed` / `canceled` | — | Reopen only on explicit request |
 
-## Safety Escalations
+## Escalations
 
-- **Ambiguous state mapping** → Ask user which state to use
-- **Cross-project writes** → Require explicit user confirmation (per project_check)
-- **Missing capabilities** → Report limitation, do not simulate
-- **Timeout** → Re-read before retry
-- **Already in target state** → Skip, do not re-write
-- **Invariant violation** → Report which invariant and why, do not proceed
+- Ambiguous state → ask user
+- Cross-project write → confirm (per `project_check`)
+- Missing capability → report; don't simulate
+- Timeout → re-read before retry
+- Already in target state → skip
+- Invariant violation → report which one; stop
 
-## Supported Operations
+## Errors
 
-- **Create Issue**: From user request or template
-- **Read Issue**: Get current state, metadata, linked issues
-- **Start Work**: Create branch, update to `started`
-- **Move to Review**: Update to `review` (per review_gate)
-- **Mark Done**: Update to `completed` (per completion_gate)
-- **Resume Work**: Detect and recover interrupted work (branch, PR, CI state)
-- **Release Coordination**: Automatically close related issues (per release_reconciliation)
-
-## Error Handling
-
-All errors are reported with:
-1. **What happened**: Clear description of the error
-2. **Why it happened**: Root cause or constraint violated
-3. **What to do**: Suggested next steps
-
-Example:
-
-```
-Error: Cannot mark ABC-123 as done
-Reason: completion_gate is "production_deployment" but no deployment evidence found
-Action: Provide deployment evidence (logs, health check, etc.) or change completion_gate
-```
+Report: what happened · why · suggested action. Format: [output-contracts.md](references/output-contracts.md)
 
 ---
 
-**Version**: 0.5.0  
-**Last Updated**: 2026-07-17  
-**Profile Support**: minimal, standard, strict
+**Version**: 0.6.0 · **Profiles**: minimal, standard, strict

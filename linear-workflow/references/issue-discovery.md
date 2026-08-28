@@ -1,21 +1,19 @@
-# Issue Discovery, Creation, and Query (Read-Only by Default)
+# Issue Discovery (Read-Only Default)
 
-"What requirements are left", "what bugs are there", "show me the Linear backlog" these mean browsing only, not changing issues. First determine scope from team, project, assignee etc. that the user provides; ask when scope is unclear and cannot be safely defaulted.
+"What's left", "show backlog" → browse only. Determine scope from user input; ask if unclear.
 
-## Browsing
+## Browse
 
-1. Paginate to completion, a clear result cap, or when the tool cannot continue; explain coverage/cap.
-2. Exclude types `completed`, `canceled`, and `triage`; keep backlog, unstarted, started, and Review.
-3. First alert issues already in started/Review; sort the rest by Urgent, High, Medium, Low, no priority, with same priority by updatedAt, createdAt, identifier.
-4. Classify as Bug vs Feature/Other using issue type, labels, project conventions. Mark "inferred" when only inferred from title or description.
-5. Output `ID | Title | Type | Priority | Status | Assignee | Project`; missing fields show `—`, never fabricate.
+1. Paginate to cap or exhaustion; state coverage
+2. Exclude `completed`, `canceled`, `triage`
+3. Surface started/review first; sort by priority then updatedAt
+4. Classify Bug vs Feature; mark inferred when guessing from title
+5. Output: `ID | Title | Type | Priority | Status | Assignee | Project` — `—` for missing
 
-## Reading
+## Read
 
-"Look at/analyze/explain ABC-123" reads full details only, does not assign or change state.
+Analyze/explain → read only. Surface latest Agent Brief if prior work exists — [agent-brief.md](agent-brief.md).
 
-## Creating
+## Create
 
-When discovering new needs/problems, echo the proposed title, problem/impact, acceptance criteria, team/project/priority/labels; only call the creation capability when the user explicitly requests or confirms creation, and read back the identifier. On creation failure, provide a draft but must not claim it was created.
-
-Using a template does not bypass user confirmation — see [template-system.md](template-system.md) for details.
+Echo proposed title, impact, acceptance criteria, metadata. Create only on explicit user confirm; read back ID. Failure → draft only, don't claim created. Templates don't bypass confirm — [template-system.md](template-system.md).
