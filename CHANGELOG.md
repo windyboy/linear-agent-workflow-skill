@@ -2,6 +2,17 @@
 
 All notable changes to Linear Workflow are documented in this file.
 
+## [0.6.0] - 2026-08-28
+
+### Added
+- **Agent Brief**: second-person Linear comments (`---agent-brief---`) for cross-agent handoff at start, progress, pause, review, and done.
+- **Work phases**: canonical resolve flow — `discover → solution → tasks → execute → verify` (`references/work-phases.md`).
+
+### Changed
+- **Documentation compression**: skill docs reduced ~57% (~3200 → ~1380 lines) with tables and deduplicated references; English-only prose.
+- `start-implementation.md` restructured around the five work phases.
+- `execution-context.md` and `workflow-binding.md` condensed to cheat-sheet format.
+
 ## [0.5.0] - 2026-07-17
 
 `v0.5.0` adds optional local **Execution Context (Layer 2)** and a durable **Workflow Binding (Layer 1)**, while remaining backward compatible by default (`execution_context.mode: disabled`).
