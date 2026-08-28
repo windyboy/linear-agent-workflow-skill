@@ -7,6 +7,7 @@
 - Re-read after timeout
 - Only complete uncompleted steps
 - Do not repeat adding identical comments
+- Agent Brief: skip if the latest `---agent-brief---` comment is substantially the same (see [agent-brief.md](agent-brief.md))
 - State and comment operations on a single issue are independently auditable steps
 
 ## State Change Output

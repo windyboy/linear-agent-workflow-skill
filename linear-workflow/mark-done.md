@@ -41,6 +41,10 @@ weak_matches_requiring_confirmation: []
 comment_failures: []
 ```
 
+## Agent Brief
+
+After marking Done, post a final **Agent Brief** with the outcome, release/deployment pointer, and any lessons for future Agents — see [references/agent-brief.md](references/agent-brief.md).
+
 ## Execution Context Independence
 
 Mark Done is **independently callable** and never requires an Execution Context. A local `completed` context state (the `execution_context_v1` `plan.md` reaching `completed`) is working memory only and is **not** evidence of release or production deployment. Completion is decided solely by the configured `completion_gate` and the evidence rules above (Invariant 5). When `execution_context.mode: disabled` (the default), no Execution Context exists and the behavior is unchanged.

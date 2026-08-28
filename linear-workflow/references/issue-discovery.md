@@ -12,7 +12,7 @@
 
 ## Reading
 
-"Look at/analyze/explain ABC-123" reads full details only, does not assign or change state.
+"Look at/analyze/explain ABC-123" reads full details only, does not assign or change state. When the issue has prior work, surface the latest Agent Brief (`---agent-brief---` comment) in the response — see [agent-brief.md](agent-brief.md).
 
 ## Creating
 

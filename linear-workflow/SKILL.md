@@ -107,6 +107,7 @@ Load only when relevant to the current phase:
 | [references/start-implementation.md](references/start-implementation.md) | Reading issue, planning, branching, implementing |
 | [references/move-to-review.md](references/move-to-review.md) | Verification, acceptance, moving to Review |
 | [references/output-contracts.md](references/output-contracts.md) | Error handling, idempotency, audit format |
+| [references/agent-brief.md](references/agent-brief.md) | Writing and reading handoff context for other Agents |
 | [references/project-scope.md](references/project-scope.md) | Scope boundary decisions |
 | [references/resume-work.md](references/resume-work.md) | Resuming interrupted work |
 | [mark-done.md](mark-done.md) | Marking issues Done (independently callable) |
@@ -130,10 +131,14 @@ Load only when relevant to the current phase:
 - **Already in target state** → Skip, do not re-write
 - **Invariant violation** → Report which invariant and why, do not proceed
 
+## Agent Brief (handoff for other Agents)
+
+At meaningful handoff points (start, progress, pause, review, done), post a short **Agent Brief** comment on the issue — written in second person so the next Agent session can immediately understand what happened and what to do next. See [references/agent-brief.md](references/agent-brief.md). This is independent of `audit_comments` and optional Execution Context; no extra configuration required.
+
 ## Supported Operations
 
 - **Create Issue**: From user request or template
-- **Read Issue**: Get current state, metadata, linked issues
+- **Read Issue**: Get current state, metadata, linked issues, latest Agent Brief
 - **Start Work**: Create branch, update to `started`
 - **Move to Review**: Update to `review` (per review_gate)
 - **Mark Done**: Update to `completed` (per completion_gate)
@@ -157,6 +162,6 @@ Action: Provide deployment evidence (logs, health check, etc.) or change complet
 
 ---
 
-**Version**: 0.5.0  
-**Last Updated**: 2026-07-17  
+**Version**: 0.5.1  
+**Last Updated**: 2026-08-28  
 **Profile Support**: minimal, standard, strict

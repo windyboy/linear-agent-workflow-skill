@@ -2,7 +2,7 @@
 
 ## Read Full Issue
 
-Before starting implementation, read completely: title, description, acceptance criteria, current status, priority, assignee, labels, project, cycle, comments, attachments, parent/child issues, blocking/blocked/related issues, and branch/PR/commit associations (if available). Never modify code based on title alone.
+Before starting implementation, read completely: title, description, acceptance criteria, current status, priority, assignee, labels, project, cycle, comments, attachments, parent/child issues, blocking/blocked/related issues, and branch/PR/commit associations (if available). If a prior Agent Brief exists (latest `---agent-brief---` comment), read it first — see [agent-brief.md](agent-brief.md). Never modify code based on title alone.
 
 Read the project's own Agent instructions, inspect the codebase structure and version control state, locate relevant modules, identify build/test methods, and record the pre-change baseline when possible. If the issue content is insufficient, check related issues, history, and code, then list missing information; do not fabricate acceptance criteria.
 
@@ -32,6 +32,8 @@ After implementation authorization under the effective `plan_confirmation` strat
 3. Read back to confirm target state ID/type; if verification fails, do not create branches or modify code.
 4. Create a dedicated branch based on existing project branch conventions; when no conventions exist, suggest a short name containing the full issue identifier. Check the workspace before creating; never overwrite uncommitted user changes.
 5. Implement the minimal necessary changes; do not incidentally refactor, remove valuable comments, or change unrelated public behavior.
+
+After the started-state write succeeds, post an **Agent Brief** summarizing the goal, agreed plan, branch name, and any user-stated constraints — see [agent-brief.md](agent-brief.md).
 
 ## Workflow Binding & Execution Context (optional)
 

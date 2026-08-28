@@ -25,7 +25,8 @@ Regardless of policy, after the move-to-review trigger fires:
 2. If already in the target Review state, skip the state write; check for an identical audit comment to avoid duplication.
 3. After updating state, read back to confirm actual state; if failed, report and do not claim success.
 4. Add and read back a resolution summary comment: Resolution summary, Root cause, Implementation, Key files, Validation performed, Validation not performed, Known limitations, Commit/PR reference.
-5. State succeeded but comment failed: explicitly report "state succeeded, comment failed"; comment succeeded but state failed: report separately, and do not claim moved to Review.
+5. Post an **Agent Brief** describing what was built, how to verify, known gaps, and PR/CI pointers — see [agent-brief.md](agent-brief.md).
+6. State succeeded but comment failed: explicitly report "state succeeded, comment failed"; comment succeeded but state failed: report separately, and do not claim moved to Review.
 
 ## Execution Context Reconciliation (optional)
 

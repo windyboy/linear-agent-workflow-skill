@@ -4,7 +4,7 @@ When an issue is already in a started state but work was interrupted (session en
 
 ## Resume Detection
 
-When resuming, check evidence in the following order to locate the first incomplete stage:
+When resuming, read the **latest Agent Brief** on the issue (`---agent-brief---` envelope) before checking other evidence — see [agent-brief.md](agent-brief.md). Then check evidence in the following order to locate the first incomplete stage:
 
 | Evidence | Corresponding stage | How to check |
 | --- | --- | --- |
