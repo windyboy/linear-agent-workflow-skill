@@ -42,6 +42,13 @@ group('Skill frontmatter and conventions');
       else ok('frontmatter name is "linear-workflow"');
       if (!fm.description) fail('frontmatter missing required "description"');
       else ok('frontmatter has description');
+      // skills CLI (bunx skills install) rejects unquoted scalars that contain `:`.
+      const descRaw = frontmatterFieldRaw(readFileSync(sk, 'utf8'), 'description');
+      if (descRaw && !isYamlQuotedScalar(descRaw) && descRaw.includes(':')) {
+        fail('frontmatter description has an unquoted colon (quote the YAML value)');
+      } else if (fm.description) {
+        ok('frontmatter description is YAML-safe');
+      }
       // Directory convention: the skill directory basename must match the name.
       if (basename(skillDir) !== fm.name) fail(`skill directory "${basename(skillDir)}" != frontmatter name "${fm.name}"`);
       else ok('skill directory matches frontmatter name');
@@ -245,6 +252,18 @@ function parseFrontmatter(text) {
     if (mm) fm[mm[1]] = mm[2].replace(/^["']|["']$/g, '');
   }
   return fm;
+}
+
+function frontmatterFieldRaw(text, field) {
+  const m = text.match(/^---\n([\s\S]*?)\n---/);
+  if (!m) return null;
+  const line = m[1].split('\n').find((l) => l.startsWith(field + ':'));
+  if (!line) return null;
+  return line.slice(field.length + 1).trim();
+}
+
+function isYamlQuotedScalar(value) {
+  return (value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"));
 }
 
 function collect(dir, base = '') {

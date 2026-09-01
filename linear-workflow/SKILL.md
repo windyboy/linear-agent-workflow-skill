@@ -1,6 +1,6 @@
 ---
 name: linear-workflow
-description: Linear issue lifecycle with configurable profiles. Use for Linear, issue IDs (ABC-123), creating/starting work, plans, PRs, review, release, or closing issues. Profiles: minimal, standard, strict.
+description: "Linear issue lifecycle with configurable profiles. Use for Linear, issue IDs (ABC-123), creating/starting work, plans, PRs, review, release, or closing issues. Profiles: minimal, standard, strict."
 ---
 
 # Linear Workflow
