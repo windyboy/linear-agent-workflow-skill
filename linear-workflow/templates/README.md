@@ -4,6 +4,8 @@
 
 **Review output:** `change-review.md` · `release-review.md` · `finding.md` (nested in reviews)
 
+**Coordination:** `task-packet.md` (local collaboration-lite workstream contract)
+
 ## Routing
 
 | Request | Template |
@@ -13,9 +15,10 @@
 | Internal cleanup | Refactor |
 | Review change | Change Review |
 | Verify release | Release Review |
+| Split a planned local workstream | Task Packet |
 
 Routing logic: [template-system.md](../references/template-system.md)
 
-Templates ≠ Execution Context local files. Creation templates have no context fields.
+Creation templates have no Execution Context fields. `task-packet.md` is intentionally different: it is a local file inside an enabled Execution Context, not a Linear creation template. See [collaboration.md](../references/collaboration.md).
 
-6 templates total (3 creation + 2 output + 1 shared format).
+7 templates/files total (3 creation + 2 review output + 1 shared finding format + 1 local coordination packet).

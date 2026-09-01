@@ -39,4 +39,6 @@ Gitignore: `required`+unignored → fail closed; skill never edits `.gitignore`.
 
 Resume: match by issue UUID; external evidence wins ([resume-work.md](resume-work.md)).
 
+**Collaboration-lite:** an enabled Layer 2 context may hold a few local task packets and append-only workstream reports under `.agent-work/<issue>/workstreams/`. It adds no lifecycle state or governance field; see [collaboration.md](collaboration.md).
+
 Redact secrets. `findings.md` cannot carry governance fields.

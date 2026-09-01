@@ -34,6 +34,8 @@ Protocol: [execution-context.md](execution-context.md) · Binding: [workflow-bin
 
 Context: discover by **issue UUID** (not display ID). Multiple candidates → user selects. Key changed → report stale ID; don't rename directory. Revision/hash conflict → don't write; report. Ghost branch / baseline drift → pause.
 
+For collaboration-lite, reconcile local packet/report/review evidence after this ladder; see [collaboration.md](collaboration.md).
+
 ## Recovery (five questions)
 
 1. **Goal?** — Intended deliverable

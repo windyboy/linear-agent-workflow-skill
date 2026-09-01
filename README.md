@@ -16,7 +16,8 @@ linear-workflow/
 │   ├── refactor.md
 │   ├── change-review.md
 │   ├── release-review.md
-│   └── finding.md
+│   ├── finding.md
+│   └── task-packet.md               # Local collaboration-lite workstream contract
 ├── examples/                       # Profile configuration examples
 │   ├── README.md
 │   ├── minimal-project.md
@@ -32,6 +33,7 @@ linear-workflow/
     ├── output-contracts.md         # Error format, idempotency rules
     ├── project-scope.md            # Scope boundary decisions
     ├── resume-work.md              # Resuming interrupted work
+    ├── collaboration.md            # Optional lightweight local workstreams
     └── review-gate-policy.md       # Configurable Review trigger
 ```
 
@@ -69,6 +71,8 @@ Configure via repository instructions (`AGENTS.md`, `CLAUDE.md`), team/project c
 
 > **v0.5.0 — optional Execution Context.** v0.5.0 adds an opt-in local **Execution Context** (`execution_context.mode`, default `disabled`) for multi-session working memory, plus a durable **Workflow Binding** that freezes the resolved governance configuration per issue. With `disabled` (the default), no Layer 2 local files are created and lifecycle gate semantics remain unchanged; newly managed issues still receive the minimal Layer 1 Binding. See `linear-workflow/references/execution-context.md`.
 
+> **Unreleased — collaboration-lite.** A personal/small-project Issue with the existing Execution Context enabled may optionally use a few bounded local task packets, Worker reports, and sequential independent cross-checks. The Coordinator remains the sole Linear writer under the existing authorization invariant. This adds no **new** configuration, parser, claim/lease mechanism, or lifecycle gate. See `linear-workflow/references/collaboration.md`.
+
 ### Resume existing work
 
 When resuming interrupted work, the skill detects the current state from evidence (branch, commits, PR, CI, deployment records) and continues from the first unverified stage — no stage is skipped without evidence.
@@ -93,7 +97,7 @@ The Skill deliberately does not depend on a particular host, CLI, directory conv
 
 ## Templates
 
-The skill ships a small, reusable template system for creating well-structured Linear issues and reviewing changes. It contains exactly five top-level templates plus one shared format:
+The skill ships a small, reusable template system for creating well-structured Linear issues and reviewing changes, plus one local coordination packet:
 
 - **Idea / Feature** — new ideas and user-visible capabilities.
 - **Bug Report** — behavior that differs from the documented or expected result.
@@ -101,8 +105,9 @@ The skill ships a small, reusable template system for creating well-structured L
 - **Change Review** — Quick or Full review of code, docs, workflow rules, or structural changes.
 - **Release Review** — packaging and release-readiness verification.
 - **Finding** (shared, not a sixth top-level template) — used inside Change Review findings.
+- **Task Packet** (local, not a Linear template) — bounded collaboration-lite workstream contract.
 
-Select one template per request using the routing table in `linear-workflow/templates/README.md`. The skill uses the selected template when drafting or creating an issue; this never bypasses the required user-confirmation gate before creation. Optional fields are left blank or marked `unknown` rather than fabricated.
+Select an issue template per creation/review request using the routing table in `linear-workflow/templates/README.md`; this never bypasses the required user-confirmation gate before creation. Task Packets are local records used only by collaboration-lite with the existing Execution Context enabled. Optional fields are left blank or marked `unknown` rather than fabricated.
 
 ## Done workflow integration
 

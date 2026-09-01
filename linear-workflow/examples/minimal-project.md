@@ -19,3 +19,7 @@ profile: minimal
 **Traits:** implicit plan, PR-ready review, no audit, no project check.
 
 **Limits:** no compliance trail, no auto release coordination.
+
+## Optional: a small cross-check
+
+For a bounded task that benefits from a second opinion, first enable the existing Execution Context through its normal configuration process, then follow [collaboration-lite](../references/collaboration.md). A Worker appends `report.md`; a Reviewer may independently write `review.md`; the Coordinator compares both with the packet before any authorized Linear summary.

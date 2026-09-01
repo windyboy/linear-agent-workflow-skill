@@ -23,6 +23,8 @@ discover → solution → tasks → execute → verify
 
 Record in Agent Brief, issue comment, or `plan.md`. Sub-issues only when user requests.
 
+For an optional small, bounded local split, see [collaboration.md](collaboration.md).
+
 **Linear mapping:** discover/solution/tasks → `backlog`/`unstarted`; execute → `started`; verify → review → `completed`.
 
 Handoff: [agent-brief.md](agent-brief.md) reflects phase + open tasks.
