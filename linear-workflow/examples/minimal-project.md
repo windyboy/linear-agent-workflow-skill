@@ -22,4 +22,4 @@ profile: minimal
 
 ## Optional: a small cross-check
 
-For a bounded task that benefits from a second opinion, first enable the existing Execution Context through its normal configuration process. Then create a local collaboration-lite task packet during planning and dispatch it after `started`. A Worker appends `report.md`; a Reviewer may independently write `review.md`. The Coordinator compares both with the packet before any authorized Linear summary. No packet means the normal solo flow. See [collaboration.md](../references/collaboration.md).
+For a bounded task that benefits from a second opinion, first enable the existing Execution Context through its normal configuration process, then follow [collaboration-lite](../references/collaboration.md). A Worker appends `report.md`; a Reviewer may independently write `review.md`; the Coordinator compares both with the packet before any authorized Linear summary.

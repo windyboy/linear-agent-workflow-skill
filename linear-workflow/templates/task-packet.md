@@ -1,6 +1,6 @@
 # Task Packet
 
-Use for one collaboration-lite workstream after the Coordinator has planned the Issue. It is a local coordination record, not a Linear issue-creation template and not authorization to dispatch work before the normal `started` transition.
+Use for one collaboration-lite workstream. It is a local coordination record, not a Linear issue-creation template. Lifecycle timing, contract, and authority rules: [collaboration.md](../references/collaboration.md).
 
 ```markdown
 # <workstream-id>: <short task>
@@ -8,9 +8,8 @@ Use for one collaboration-lite workstream after the Coordinator has planned the 
 - Parent issue: ABC-123
 - Role: worker | reviewer | third-opinion
 - Owner session: <accepted owner or unassigned>
-- Status: planned | dispatched | reported | reviewed | excepted
 - Depends on: <workstream IDs or none>
-- Independent review requested: true | false
+- independent_review_requested: true | false
 
 ## Scope
 
@@ -35,4 +34,4 @@ Use for one collaboration-lite workstream after the Coordinator has planned the 
 - None known.
 ```
 
-The Worker appends evidence to `report.md`. The Reviewer uses [finding.md](finding.md) in a separate `review.md`. Model/provider identity is optional advisory context for `review.md` or an Agent Brief summary, not a packet field. Contract and authority rules: [collaboration.md](../references/collaboration.md).
+The Worker appends evidence to `report.md`. The Reviewer uses [finding.md](finding.md) in a separate `review.md`. Model/provider identity is optional advisory context for `review.md` or an Agent Brief summary, not a packet field.

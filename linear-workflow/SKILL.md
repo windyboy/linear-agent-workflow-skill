@@ -54,7 +54,7 @@ Protocol: [references/execution-context.md](references/execution-context.md)
 
 ## Optional: Collaboration Lite
 
-For a personal/small-project Issue that needs a few bounded local workstreams, use opt-in collaboration-lite. It keeps Linear authority and lifecycle semantics unchanged; without a task packet, stay on the single-Agent flow. Reference: [references/collaboration.md](references/collaboration.md) · packet: [templates/task-packet.md](templates/task-packet.md).
+For a personal/small-project Issue that needs a few bounded local workstreams, use opt-in collaboration-lite. It keeps Linear authority and lifecycle semantics unchanged. Reference: [references/collaboration.md](references/collaboration.md) · packet: [templates/task-packet.md](templates/task-packet.md).
 
 ## Agent Brief
 

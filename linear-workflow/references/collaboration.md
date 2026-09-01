@@ -35,7 +35,7 @@ Use these paths within the existing Execution Context root when Layer 2 is enabl
 
 `report.md` is append-only: append dated evidence instead of replacing prior conclusions. A Reviewer writes a separate `review.md` using the shared [finding template](../templates/finding.md). If the repository has `execution_context.mode: disabled`, collaboration-lite is unavailable for local dispatch; retain the single-Agent flow or enable the existing context feature through its normal configuration process.
 
-Before an authorized Linear summary, the Coordinator compares the packet's scope and acceptance criteria with Worker and Reviewer evidence. Keep unresolved disagreement visible. Local workstream progress, a Reviewer agreement, or a third opinion never satisfies `review_gate` or `completion_gate`.
+Before an authorized Linear summary, the Coordinator compares the packet's scope and acceptance criteria with Worker and Reviewer evidence. Keep unresolved disagreement visible. Integration failure leaves the Issue in its existing `started` state; it neither creates nor rolls back a Linear state. Local workstream progress, a Reviewer agreement, or a third opinion never satisfies `review_gate` or `completion_gate`.
 
 ## Cross-check and disagreement
 

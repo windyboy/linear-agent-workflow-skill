@@ -71,7 +71,7 @@ Configure via repository instructions (`AGENTS.md`, `CLAUDE.md`), team/project c
 
 > **v0.5.0 — optional Execution Context.** v0.5.0 adds an opt-in local **Execution Context** (`execution_context.mode`, default `disabled`) for multi-session working memory, plus a durable **Workflow Binding** that freezes the resolved governance configuration per issue. With `disabled` (the default), no Layer 2 local files are created and lifecycle gate semantics remain unchanged; newly managed issues still receive the minimal Layer 1 Binding. See `linear-workflow/references/execution-context.md`.
 
-> **Unreleased — collaboration-lite.** A personal/small-project Issue with the existing Execution Context enabled may optionally use a few bounded local task packets, Worker reports, and sequential independent cross-checks. The Coordinator remains the sole Linear writer under the existing authorization invariant. This adds no **new** configuration, parser, claim/lease mechanism, or lifecycle gate; an Issue without packets stays on the single-Agent flow. See `linear-workflow/references/collaboration.md`.
+> **Unreleased — collaboration-lite.** A personal/small-project Issue with the existing Execution Context enabled may optionally use a few bounded local task packets, Worker reports, and sequential independent cross-checks. The Coordinator remains the sole Linear writer under the existing authorization invariant. This adds no **new** configuration, parser, claim/lease mechanism, or lifecycle gate. See `linear-workflow/references/collaboration.md`.
 
 ### Resume existing work
 
