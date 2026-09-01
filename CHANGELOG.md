@@ -2,6 +2,15 @@
 
 All notable changes to Linear Workflow are documented in this file.
 
+## [Unreleased]
+
+### Added
+- **Collaboration-lite**: an opt-in, local workstream contract for personal/small-project Issues: Coordinator, Worker, sequential independent Reviewer, and optional third opinion for material disagreement or higher risk.
+- `references/collaboration.md` and `templates/task-packet.md`, with concise routing and resume/Execution Context pointers.
+
+### Changed
+- Agent Briefs may include a backward-compatible local coordination summary. Existing single-Agent flow, five invariants, Linear state semantics, and profile gates are unchanged.
+
 ## [0.6.0] - 2026-08-28
 
 ### Added

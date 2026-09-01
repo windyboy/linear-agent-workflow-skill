@@ -23,6 +23,8 @@ discover → solution → tasks → execute → verify
 
 Record in Agent Brief, issue comment, or `plan.md`. Sub-issues only when user requests.
 
+For a small, bounded local split, create collaboration-lite task packets during **Tasks**; dispatch only during **Execute** after the normal `started` transition. See [collaboration.md](collaboration.md).
+
 **Linear mapping:** discover/solution/tasks → `backlog`/`unstarted`; execute → `started`; verify → review → `completed`.
 
 Handoff: [agent-brief.md](agent-brief.md) reflects phase + open tasks.

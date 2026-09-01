@@ -52,6 +52,10 @@ When `disabled`, no Layer 2 files are created; newly bound issues still receive 
 
 Protocol: [references/execution-context.md](references/execution-context.md)
 
+## Optional: Collaboration Lite
+
+For a personal/small-project Issue that needs a few bounded local workstreams, use opt-in collaboration-lite. It keeps Linear authority and lifecycle semantics unchanged; without a task packet, stay on the single-Agent flow. Reference: [references/collaboration.md](references/collaboration.md) · packet: [templates/task-packet.md](templates/task-packet.md).
+
 ## Agent Brief
 
 At handoff points (start, progress, pause, review, done), post a second-person **Agent Brief** comment so the next Agent session can pick up quickly. Independent of audit comments; no extra config. See [references/agent-brief.md](references/agent-brief.md).
@@ -83,6 +87,7 @@ Load only when needed:
 | [configuration-schema.md](references/configuration-schema.md) | Config / profiles |
 | [capability-discovery.md](references/capability-discovery.md) | First Linear op in session |
 | [execution-context.md](references/execution-context.md) | Layer 1 + 2 protocol |
+| [collaboration.md](references/collaboration.md) | Optional small-project workstreams |
 | [workflow-binding.md](references/workflow-binding.md) | Binding read/write/read-back |
 | [work-phases.md](references/work-phases.md) | 5-phase resolve flow |
 | [issue-discovery.md](references/issue-discovery.md) | Discover: browse / create / query |
@@ -93,7 +98,7 @@ Load only when needed:
 | [project-scope.md](references/project-scope.md) | Scope boundaries |
 | [resume-work.md](references/resume-work.md) | Resume interrupted work |
 | [mark-done.md](mark-done.md) | Mark Done (standalone) |
-| [templates/](templates/) | Issue templates |
+| [templates/](templates/) | Issue and local coordination templates |
 
 ## Transitions
 

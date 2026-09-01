@@ -46,10 +46,16 @@ On in-progress issues: find latest `---agent-brief---` … `---end-agent-brief--
 2. Open PR when CI passes
 
 **Evidence:** branch `feature/ABC-123-dark-mode` · PR none
+
+### Coordination summary (optional)
+
+- Workstreams: `ui` reported; `docs` awaiting review
+- Cross-check: `ui` reviewed independently; no material disagreement
+- Handoff: compare `report.md` and `review.md` with packet acceptance criteria
 ---end-agent-brief---
 ```
 
-**Style:** second person, factual, scannable bullets. No governance fields (authorization, gates, profile).
+Use the optional coordination summary only for a collaboration-lite Issue; it reports local status and evidence, not authority. **Style:** second person, factual, scannable bullets. No governance fields (authorization, gates, profile).
 
 ## Idempotency
 
@@ -62,4 +68,5 @@ Append only; don't edit prior briefs. Skip duplicates. Redact secrets and person
 | Agent Brief | Next Agent — what happened, what's next |
 | audit_comments | Humans — state-transition audit |
 | Execution Context | Local — plan/findings/progress files |
+| Collaboration-lite packet/report/review | Local — bounded workstream evidence |
 | Issue description | Everyone — requirements |
